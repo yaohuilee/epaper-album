@@ -1,0 +1,14 @@
+menu "Epaper album"
+config EPAPER_CONFIG_PATH
+    string "Global configuration path on SD card"
+    default "/config.json"
+config EPAPER_IDLE_SECONDS
+    int "Awake maintenance window before deep sleep"
+    range 5 120
+    default 10
+endmenu
+config EPAPER_PROVISION_WIFI
+    bool "Provision SD Wi-Fi settings from a local private build header"
+    default n
+    help
+        Import WIFI.txt into .local/wifi_credentials.h. Never commit that file.

@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "device": {
+    "name": "epaper-album",
+    "language": "zh-CN",
+    "timezone": "Asia/Shanghai"
+  },
+  "album": {
+    "root": "/albums",
+    "manifest": "albums.json"
+  },
+  "display": {
+    "rotation_degrees": 0,
+    "on_invalid_image": "skip"
+  },
+  "announcement": {
+    "enabled": false,
+    "minutes": [
+      0,
+      30
+    ],
+    "volume_percent": 40,
+    "include_temperature": true,
+    "include_humidity": true,
+    "temperature_decimals": 1,
+    "humidity_decimals": 0,
+    "quiet_hours": {
+      "enabled": true,
+      "start": "22:00",
+      "end": "08:00"
+    },
+    "max_lateness_seconds": 60,
+    "catch_up_missed": false,
+    "audio_root": "/audio/zh-CN"
+  },
+  "time": {
+    "rtc_storage": "utc",
+    "sync": {
+      "mode": "manual",
+      "ntp_server": "pool.ntp.org"
+    }
+  },
+  "sensor": {
+    "temperature_offset_c": 0.0,
+    "humidity_offset_percent": 0.0
+  },
+  "power": {
+    "sleep_between_events": true,
+    "low_battery_policy": "none"
+  },
+  "activity": {
+    "enabled": false,
+    "mode": "sound_energy",
+    "silence_timeout_seconds": 1800,
+    "suppress_auto_announcement_when_quiet": true,
+    "store_audio": false
+  },
+  "network": {
+    "wifi_enabled": false
+  }
+}

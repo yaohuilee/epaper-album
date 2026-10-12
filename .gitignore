@@ -1,0 +1,56 @@
+# Build output and local configuration
+build/
+managed_components/
+sdkconfig
+sdkconfig.old
+.venv/
+__pycache__/
+.DS_Store
+Thumbs.db
+
+# Firmware dumps, personal media and credentials
+*.bin
+*.bmp
+*.wav
+*.mp3
+.env
+.env.*
+secrets*.json
+config.local.json
+sdcard/.state/
+.local/
+*.exe
+*.obj
+*.pdb
+
+# Generated image assets and packages (keep source workflows/configuration only)
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.zip
+*.7z
+*.log
+*.pyc
+*.elf
+*.map
+# Device dumps, legacy firmware and raw probe recordings
+backups/
+legacy-firmware/
+probe-data/
+WIFI.txt
+wifi_credentials.h
+config.wifi*.json
+
+# Private credentials, font binaries and audit mirrors
+*.pem
+*.key
+*.p12
+*.pfx
+*.ttf
+*.otf
+*.ttc
+*.woff
+*.woff2
+*.bundle

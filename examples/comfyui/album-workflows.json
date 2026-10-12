@@ -1,0 +1,5467 @@
+{
+  "schema_version": 1,
+  "image_width": 1280,
+  "image_height": 768,
+  "items": [
+    {
+      "name": "001_alpine_lake",
+      "title": "阿尔卑斯湖光",
+      "category": "landscape",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "A breathtaking alpine landscape, crystal clear blue lake reflecting snow capped mountains, emerald pine forests, golden wildflowers in the foreground, white cumulus clouds and vivid blue sky, warm morning sunlight, elegant balanced wide landscape composition, travel magazine photography, incredibly beautiful, crisp natural detail, vivid clean colors, bright luminous image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100900,
+            "steps": 9,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/001_alpine_lake"
+          }
+        }
+      }
+    },
+    {
+      "name": "002_autumn_valley",
+      "title": "秋日山谷",
+      "category": "landscape",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "A breathtaking autumn valley in the Japanese countryside, bright scarlet maple trees and golden gingko trees on hillsides, a winding blue river, small traditional wooden bridge, distant blue mountains, white clouds, clean afternoon sunlight, magnificent wide panoramic composition, fine art landscape photography, crisp details, saturated yet natural colors, bright luminous scene",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100901,
+            "steps": 9,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/002_autumn_valley"
+          }
+        }
+      }
+    },
+    {
+      "name": "003_tropical_cove",
+      "title": "海岛秘境",
+      "category": "landscape",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "An idyllic tropical island cove, luminous azure sea, bright white sand beach, emerald palms, dramatic white clouds, distant green limestone islands, a small red sailing boat as a focal point, sunlit clear daylight, beautiful expansive wide composition, travel editorial photography, pristine water, vivid clean color contrast, tranquil scene",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100902,
+            "steps": 9,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/003_tropical_cove"
+          }
+        }
+      }
+    },
+    {
+      "name": "004_misty_china",
+      "title": "山水晨曦",
+      "category": "landscape",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "A majestic Chinese mountain landscape, towering jagged peaks rising above white morning mist, lush emerald trees, a traditional red pavilion on a ridge, brilliant sunbeams, distant blue mountain layers, beautiful river valley, cinematic landscape photography, wide composition, refined serene atmosphere, bright clean saturated colors and strong readable silhouettes",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100903,
+            "steps": 9,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/004_misty_china"
+          }
+        }
+      }
+    },
+    {
+      "name": "005_ringed_planet",
+      "title": "星环远航",
+      "category": "scifi",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "Epic beautiful science fiction concept art, a small sleek white spacecraft resting on a golden rocky plateau, vast alien landscape, a huge blue ringed planet in a bright sky, soft white clouds and red rock spires, a tiny adult astronaut in a red suit, sunlight and clear atmospheric depth, grand wide composition, premium cinematic art, clean vivid colors, readable shapes, inspiring exploration, luminous image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100904,
+            "steps": 9,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/005_ringed_planet"
+          }
+        }
+      }
+    },
+    {
+      "name": "006_floating_city",
+      "title": "天空之城",
+      "category": "scifi",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "Breathtaking optimistic science fiction floating city above bright white clouds, elegant white towers with blue glass, green hanging gardens, golden bridges and a few sleek red airships, expansive blue sky, brilliant sunlight, utopian architecture, futuristic concept art, wide cinematic composition, strong clean silhouettes, beautiful fine details, vibrant luminous palette",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100905,
+            "steps": 9,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/006_floating_city"
+          }
+        }
+      }
+    },
+    {
+      "name": "007_orbital_garden",
+      "title": "星际花园",
+      "category": "scifi",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "A beautiful futuristic space station botanical garden inside a vast white glass dome, lush green trees, vivid red flowers, graceful white bridges over a blue reflecting pool, enormous blue and white planet visible outside, golden sunlight, elegant science fiction architecture concept art, wide balanced composition, serene hopeful atmosphere, premium cinematic illustration, crisp clean colors, bright image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100906,
+            "steps": 9,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/007_orbital_garden"
+          }
+        }
+      }
+    },
+    {
+      "name": "008_summer_station",
+      "title": "夏日海边车站",
+      "category": "anime",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, beautiful anime background illustration, a small coastal Japanese train station on a brilliant summer day, blue ocean stretching into the distance, white clouds, red local train beside an empty platform, lush green trees and yellow sunflowers, an adult woman in a white summer dress seen from behind looking at the sea, peaceful nostalgic atmosphere, gorgeous hand painted animation background, wide composition, clean line art, vibrant clear colors, bright sunlight",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100907,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/008_summer_station"
+          }
+        }
+      }
+    },
+    {
+      "name": "009_sakura_village",
+      "title": "樱花小镇",
+      "category": "anime",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, breathtaking anime landscape illustration, charming Japanese hillside village in spring, cherry blossom trees, red torii gate, traditional white and wooden houses, green hills, blue stream and stepping stones, distant snow capped mountain, luminous blue sky and white clouds, intricate hand painted animation background, warm clear sunlight, wide elegant composition, beautiful saturated colors, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100908,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/009_sakura_village"
+          }
+        }
+      }
+    },
+    {
+      "name": "010_mecha_horizon",
+      "title": "机甲与远方",
+      "category": "anime",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, beautiful anime science fiction illustration, a graceful white and red exploration mecha standing on a green coastal cliff looking toward a blue ocean and a distant futuristic island city, yellow wildflowers, huge white clouds, brilliant sunlight, gorgeous hand painted anime environment, precise clean line art, wide cinematic composition, strong readable silhouettes, vibrant bright colors, hopeful adventurous mood",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, letters, logo, watermark, signature, frame, border, blurry, low quality, dull gray colors, dark gloomy lighting, overexposed, oversaturated, ugly, deformed, distorted architecture, bad anatomy, extra limbs, extra fingers, nudity",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026100909,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_20261009/010_mecha_horizon"
+          }
+        }
+      }
+    },
+    {
+      "name": "011_sakura_walk",
+      "title": "樱花漫步",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, long black hair, wearing a white blouse and flowing red skirt, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a quiet sakura avenue with red lanterns and a blue sky, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101011,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/011_sakura_walk"
+          }
+        }
+      }
+    },
+    {
+      "name": "012_seaside_breeze",
+      "title": "海风少女",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, long dark brown hair, wearing a white summer dress and straw hat, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a sparkling blue sea and white lighthouse, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101012,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/012_seaside_breeze"
+          }
+        }
+      }
+    },
+    {
+      "name": "013_sunflower_day",
+      "title": "向日葵之夏",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, short dark hair, wearing a light blue modest dress, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a field of brilliant yellow sunflowers and distant green hills, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101013,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/013_sunflower_day"
+          }
+        }
+      }
+    },
+    {
+      "name": "014_kyoto_kimono",
+      "title": "京都和服",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, black hair in a neat updo, wearing an elegant red and white floral kimono, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a traditional Kyoto street with a red torii gate, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101014,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/014_kyoto_kimono"
+          }
+        }
+      }
+    },
+    {
+      "name": "015_mountain_cafe",
+      "title": "山间咖啡",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, long chestnut hair, wearing a white cardigan and navy skirt, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a sunlit wooden mountain cafe terrace and alpine lake, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101015,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/015_mountain_cafe"
+          }
+        }
+      }
+    },
+    {
+      "name": "016_autumn_letter",
+      "title": "秋日书信",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, dark hair with a simple red ribbon, wearing a mustard cardigan and white blouse, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a garden of scarlet maple leaves and a small wooden bridge, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101016,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/016_autumn_letter"
+          }
+        }
+      }
+    },
+    {
+      "name": "017_winter_sun",
+      "title": "冬日暖阳",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, long black hair, wearing a red winter coat and white scarf, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a bright snowy village with blue shadows and white pine trees, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101017,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/017_winter_sun"
+          }
+        }
+      }
+    },
+    {
+      "name": "018_garden_reader",
+      "title": "花园读书",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, wavy brown hair, wearing a flowing green dress, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a lush English rose garden with white stone arches, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101018,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/018_garden_reader"
+          }
+        }
+      }
+    },
+    {
+      "name": "019_summer_yukata",
+      "title": "夏日浴衣",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, black hair tied neatly, wearing a refined blue yukata with a yellow obi, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a riverside festival street in clear daylight with colorful lanterns, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101019,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/019_summer_yukata"
+          }
+        }
+      }
+    },
+    {
+      "name": "020_rain_clear",
+      "title": "雨后晴空",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, shoulder length dark hair, wearing a light yellow coat over a white blouse, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a Japanese town street after rain reflecting blue sky, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101020,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/020_rain_clear"
+          }
+        }
+      }
+    },
+    {
+      "name": "021_blue_train",
+      "title": "蓝色列车",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, long dark hair, wearing a white shirt and long navy skirt, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a blue and white train beside a coastal station, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101021,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/021_blue_train"
+          }
+        }
+      }
+    },
+    {
+      "name": "022_windmill_field",
+      "title": "风车花田",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, long chestnut hair, wearing a simple white dress with a blue cardigan, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background green rolling hills with white windmills and red poppies, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101022,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/022_windmill_field"
+          }
+        }
+      }
+    },
+    {
+      "name": "023_lake_painter",
+      "title": "湖畔画师",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, short brown bob hair, wearing a soft red sweater and white skirt, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a clear alpine lake with colorful wildflowers and a distant cabin, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101023,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/023_lake_painter"
+          }
+        }
+      }
+    },
+    {
+      "name": "024_tea_terrace",
+      "title": "茶田清风",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, long black hair, wearing an elegant cream blouse and green skirt, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background emerald Japanese tea terraces with a distant snow capped mountain, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101024,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/024_tea_terrace"
+          }
+        }
+      }
+    },
+    {
+      "name": "025_library_window",
+      "title": "书香午后",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, black hair with a blue ribbon, wearing a navy cardigan over a white dress, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a sunlit library window overlooking a flowering garden, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101025,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/025_library_window"
+          }
+        }
+      }
+    },
+    {
+      "name": "026_orchard_day",
+      "title": "果园晴日",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, dark brown hair, wearing a white blouse with a red pinafore dress, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a lush apple orchard with red fruit and bright white clouds, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101026,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/026_orchard_day"
+          }
+        }
+      }
+    },
+    {
+      "name": "027_white_shrine",
+      "title": "神社晨光",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, long black hair, wearing a pale yellow modest kimono with a red obi, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a shrine courtyard with a red torii gate and green trees, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101027,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/027_white_shrine"
+          }
+        }
+      }
+    },
+    {
+      "name": "028_terrace_flowers",
+      "title": "露台花语",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, brown hair in a loose braid, wearing a white linen blouse and blue long skirt, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a sunlit balcony with red geraniums above a Mediterranean blue sea, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101028,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/028_terrace_flowers"
+          }
+        }
+      }
+    },
+    {
+      "name": "029_meadow_violin",
+      "title": "草原琴音",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, long flowing black hair, wearing an elegant blue dress, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a green meadow with yellow flowers and a white gazebo, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101029,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/029_meadow_violin"
+          }
+        }
+      }
+    },
+    {
+      "name": "030_city_rooftop",
+      "title": "城市天台",
+      "category": "japanese",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "masterpiece, best quality, 1woman, solo, beautiful adult Japanese woman age 25, refined friendly expression, dark brown shoulder length hair, wearing a red casual jacket over a white dress, upper body fashion portrait with both shoulders visible and head fully in frame, hands outside frame, person occupying the left third of a wide horizontal scene, background a bright modern Japanese city skyline with white clouds and rooftop plants, gorgeous anime illustration, clean precise line art, expressive eyes, detailed clothing, gentle cel shading, large readable color areas, bright sunlight, vivid red yellow blue green and white accents, beautiful composition, peaceful atmosphere",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101030,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/030_city_rooftop"
+          }
+        }
+      }
+    },
+    {
+      "name": "031_red_shanghai_photo",
+      "title": "上海红韵·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a classic red silk qipao with subtle gold floral embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a sunlit 1930s Shanghai street with graceful stone buildings, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101031,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/031_red_shanghai_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "032_green_bamboo_photo",
+      "title": "翠竹清雅·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing an emerald green silk qipao with white floral embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background an elegant Chinese bamboo garden and moon gate, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101032,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/032_green_bamboo_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "033_blue_porcelain_photo",
+      "title": "青花瓷梦·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a white and blue porcelain patterned qipao, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a Chinese courtyard with blue and white ceramic vases, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101033,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/033_blue_porcelain_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "034_yellow_ginkgo_photo",
+      "title": "银杏金秋·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a golden yellow silk qipao with understated embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a park of golden gingko leaves and a white stone bridge, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101034,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/034_yellow_ginkgo_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "035_white_lotus_photo",
+      "title": "白莲水榭·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing an ivory white silk qipao with green lotus embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a sunlit lotus pond and red Chinese pavilion, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101035,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/035_white_lotus_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "036_jade_suzhou_photo",
+      "title": "苏州玉影·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a jade green silk qipao with delicate gold embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a peaceful Suzhou garden with white walls and a canal, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101036,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/036_jade_suzhou_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "037_crimson_peony_photo",
+      "title": "牡丹红妆·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a deep red qipao with elegant peony embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a Chinese courtyard full of red peonies and green foliage, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101037,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/037_crimson_peony_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "038_blue_riverside_photo",
+      "title": "江南蓝调·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a rich blue silk qipao with white plum blossom embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a Jiangnan water town beside a blue canal and white houses, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101038,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/038_blue_riverside_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "039_cream_magnolia_photo",
+      "title": "玉兰春色·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a cream silk qipao with subtle red magnolia flowers, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a garden of white magnolia blossoms and traditional wooden doors, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101039,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/039_cream_magnolia_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "040_red_teahouse_photo",
+      "title": "茶楼雅集·影",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a red and gold refined qipao, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a bright traditional Chinese teahouse with wooden lattice windows and green plants, premium editorial portrait photography, natural skin texture, refined realistic face, beautifully styled black hair, professional fashion photography, lifelike anatomy, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101040,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/040_red_teahouse_photo"
+          }
+        }
+      }
+    },
+    {
+      "name": "041_red_shanghai_anime",
+      "title": "上海红韵·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a classic red silk qipao with subtle gold floral embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a sunlit 1930s Shanghai street with graceful stone buildings, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101041,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/041_red_shanghai_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "042_green_bamboo_anime",
+      "title": "翠竹清雅·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing an emerald green silk qipao with white floral embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background an elegant Chinese bamboo garden and moon gate, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101042,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/042_green_bamboo_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "043_blue_porcelain_anime",
+      "title": "青花瓷梦·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a white and blue porcelain patterned qipao, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a Chinese courtyard with blue and white ceramic vases, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101043,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/043_blue_porcelain_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "044_yellow_ginkgo_anime",
+      "title": "银杏金秋·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a golden yellow silk qipao with understated embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a park of golden gingko leaves and a white stone bridge, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101044,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/044_yellow_ginkgo_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "045_white_lotus_anime",
+      "title": "白莲水榭·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing an ivory white silk qipao with green lotus embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a sunlit lotus pond and red Chinese pavilion, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101045,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/045_white_lotus_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "046_jade_suzhou_anime",
+      "title": "苏州玉影·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a jade green silk qipao with delicate gold embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a peaceful Suzhou garden with white walls and a canal, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101046,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/046_jade_suzhou_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "047_crimson_peony_anime",
+      "title": "牡丹红妆·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a deep red qipao with elegant peony embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a Chinese courtyard full of red peonies and green foliage, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101047,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/047_crimson_peony_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "048_blue_riverside_anime",
+      "title": "江南蓝调·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a rich blue silk qipao with white plum blossom embroidery, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a Jiangnan water town beside a blue canal and white houses, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101048,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/048_blue_riverside_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "049_cream_magnolia_anime",
+      "title": "玉兰春色·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a cream silk qipao with subtle red magnolia flowers, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a garden of white magnolia blossoms and traditional wooden doors, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101049,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/049_cream_magnolia_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "050_red_teahouse_anime",
+      "title": "茶楼雅集·绘",
+      "category": "qipao",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "出埃及记\\niji-动漫二次元-sdxl_2.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One beautiful adult Chinese woman age 27, elegant poised expression, wearing a red and gold refined qipao, classic high Mandarin collar and traditional knot buttons, fully clothed tasteful fashion, refined black hairstyle with a small hair ornament, upper body portrait with head fully visible and both shoulders in frame, hands out of frame, woman positioned on the right third of a wide horizontal image, background a bright traditional Chinese teahouse with wooden lattice windows and green plants, gorgeous Chinese anime fashion illustration, clean line art, subtle cel shading, expressive eyes, large readable color areas, graceful composition, clear warm daylight, luminous background, vivid clean red yellow blue green and white color accents, polished beautiful image",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101050,
+            "steps": 26,
+            "cfg": 5.5,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/050_red_teahouse_anime"
+          }
+        }
+      }
+    },
+    {
+      "name": "051_star_pilot",
+      "title": "星际领航员",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian woman age 28, confident kind expression, wearing an elegant white and blue flight suit with red insignia, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a bright starship observation lounge overlooking a blue ringed planet, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101051,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/051_star_pilot"
+          }
+        }
+      }
+    },
+    {
+      "name": "052_orbital_botanist",
+      "title": "太空植物学家",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian woman age 28, confident kind expression, wearing a refined green and white research uniform, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a luminous orbital botanical garden with red flowers and glass domes, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101052,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/052_orbital_botanist"
+          }
+        }
+      }
+    },
+    {
+      "name": "053_city_guardian",
+      "title": "未来城市守望",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian woman age 28, confident kind expression, wearing sleek white and red futuristic protective armor, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a brilliant futuristic city with hanging green gardens and white towers, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101053,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/053_city_guardian"
+          }
+        }
+      }
+    },
+    {
+      "name": "054_desert_explorer",
+      "title": "异星探索者",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian woman age 28, confident kind expression, wearing a practical yellow and white exploration suit, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a red alien desert with rock spires and a blue planet in the sky, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101054,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/054_desert_explorer"
+          }
+        }
+      }
+    },
+    {
+      "name": "055_sky_captain",
+      "title": "天空舰长",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian woman age 28, confident kind expression, wearing an elegant navy and white science fiction officer uniform, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a floating sky port above bright white clouds and golden bridges, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101055,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/055_sky_captain"
+          }
+        }
+      }
+    },
+    {
+      "name": "056_moon_scientist",
+      "title": "月面科学家",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian man age 28, confident kind expression, wearing a clean white research spacesuit with green details and helmet removed, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a white lunar station greenhouse with a distant blue Earth, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101056,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/056_moon_scientist"
+          }
+        }
+      }
+    },
+    {
+      "name": "057_robotic_artist",
+      "title": "机械艺术家",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian woman age 28, confident kind expression, wearing a modern red jacket over a white technical uniform, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a bright futuristic workshop with a graceful white robot and city windows, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101057,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/057_robotic_artist"
+          }
+        }
+      }
+    },
+    {
+      "name": "058_ocean_engineer",
+      "title": "深海工程师",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian woman age 28, confident kind expression, wearing a blue and white technical uniform, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a luminous undersea observatory with blue water, coral and white curved glass, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101058,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/058_ocean_engineer"
+          }
+        }
+      }
+    },
+    {
+      "name": "059_mecha_commander",
+      "title": "机甲指挥官",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian man age 28, confident kind expression, wearing a refined white and red pilot suit, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a sunny coastal hangar with a white exploration mecha and blue sea, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101059,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/059_mecha_commander"
+          }
+        }
+      }
+    },
+    {
+      "name": "060_garden_architect",
+      "title": "星城设计师",
+      "category": "characters",
+      "workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "DreamShaper\\DreamShaperXL_Turbo_v2_1.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "One attractive adult East Asian woman age 28, confident kind expression, wearing an elegant white tunic with a green collar, fully clothed, upper body portrait with head fully visible and hands outside the frame, character occupying one third of a beautiful wide horizontal science fiction scene, background a utopian city terrace with gardens, gold bridges and red airships, premium cinematic concept art, refined realistic face, clear readable costume design, elegant composition, bright daylight, luminous clean colors, vivid red yellow green blue white accents, optimistic inspiring future, extremely beautiful polished artwork",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "text, lettering, logo, watermark, signature, low quality, blurry face, bad anatomy, disfigured, extra limbs, extra fingers, multiple people, duplicate face, cropped head, deformed eyes, dark gloomy lighting, gray dull palette, nude, lingerie, swimsuit, child, teenager",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 1280,
+            "height": 768,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ],
+            "seed": 2026101060,
+            "steps": 10,
+            "cfg": 2.0,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "karras",
+            "denoise": 1.0
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "epaper_album_50_20261009/060_garden_architect"
+          }
+        }
+      }
+    }
+  ]
+}

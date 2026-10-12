@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "playback": {
+    "enabled": true,
+    "default_interval_seconds": 900,
+    "order": "sequential",
+    "album_strategy": "album_by_album",
+    "recursive": false,
+    "resume_position": true
+  },
+  "albums": [
+    {
+      "id": "comfy-landscape",
+      "name": "风景",
+      "directory": "comfy_landscape",
+      "enabled": true
+    },
+    {
+      "id": "comfy-scifi",
+      "name": "科幻",
+      "directory": "comfy_scifi",
+      "enabled": true
+    },
+    {
+      "id": "comfy-anime",
+      "name": "二次元",
+      "directory": "comfy_anime",
+      "enabled": true
+    },
+    {
+      "id": "comfy-japanese",
+      "name": "日系人物",
+      "directory": "comfy_japanese",
+      "enabled": true
+    },
+    {
+      "id": "comfy-qipao",
+      "name": "中式旗袍",
+      "directory": "comfy_qipao",
+      "enabled": true
+    },
+    {
+      "id": "comfy-characters",
+      "name": "科幻人物",
+      "directory": "comfy_characters",
+      "enabled": true
+    }
+  ]
+}

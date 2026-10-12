@@ -1,0 +1,101 @@
+# SD 相册照片 API
+
+[文档首页](README.md) · [项目首页](../README.md)
+
+## 网页照片管理
+
+在侧栏点击“照片库”，或访问 `/albums`。页面使用本文件描述的 API，所有资源内置固件，无需外部 CDN。相册以文件夹方式显示，点击打开后在同页浏览和上传照片，支持每页50张、筛选本页文件名、预览原始BMP、下载、逐张删除及多文件选择/拖放上传。选择相册仅改变管理目录，不改变轮播选择；停用相册会标注“未参与轮播”，播放选择和间隔在“播放设置”中调整。
+
+上传显示单张进度，依次传输且每张等待索引完成后继续。文件需预先处理，网页不做图片量化或尺寸转换；本地先检查基本BMP头部，固件完成尺寸和六色像素验证。遇到同名、非法BMP、忙碌或网络故障时停止本批，显示已完成数量，保留未完成选择；响应未确认时需刷新核对已写入文件，避免盲目重复上传。删除需确认，只移除所选文件；当前照片删除引起刷屏时等待约30秒。预览按需加载单张，列表不自动下载全部BMP。
+
+设备离线时保留列表并禁用文件操作，连接恢复后可刷新；操作中串行访问设备，不同时请求缩略图。中文及特殊文件名用URL编码和纯文本DOM显示，预览关闭/换相册释放对象URL。原有状态页与播放设置保持可用。
+
+## 文件接口
+
+设备连接电脑或普通USB外部供电、保持唤醒并连上Wi-Fi时，通过局域网访问。这些接口仅访问根配置/相册清单已经定义的相册目录，包含停用的相册。照片非递归列出；子目录分组通过清单中的相册ID访问。不是任意SD文件浏览器，不提供根配置、Wi-Fi凭据或备份下载，0.14.35 起可通过相册管理接口新建与删除相册目录。
+
+先读取 `GET /api/status`，取得 `control.token`。下表全部请求都带 `X-Album-Token: 令牌`；令牌在重启后变化，用于防止跨站请求，并非登录认证。只供现有局域网使用，服务不开放跨域读取。
+
+| 方法与路径 | 功能 | 成功响应 |
+| --- | --- | --- |
+| `GET /api/albums` | 列出已配置相册ID、目录、启用状态及间隔 | 200，`root` 与 `albums` 数组 |
+| `GET /api/files?album=ID&offset=0&limit=50` | 自然排序的BMP文件分页列表 | 200，`total/offset/limit/next_offset/files` |
+| `GET /api/photo?album=ID&name=照片.bmp` | 下载原始照片，字节保持不变 | 200，`image/bmp`，分块响应 |
+| `PUT /api/photo?album=ID&name=照片.bmp` | 上传原始BMP二进制数据流 | 201，`album/name/bytes/index_pending` |
+| `DELETE /api/photo?album=ID&name=照片.bmp` | 删除指定BMP照片 | 200，`deleted/album/name/index_pending` |
+| `POST /api/rescan` | 手动重新索引，异常后的修复入口 | 202，`job_id`，沿用控制命令状态 |
+
+`album` 与 `name` 使用UTF-8 URL编码，只解码一次。拒绝重复/未知参数、NUL、路径分隔符、`..`、隐藏文件名、非BMP名称及FAT保留字符。不能以照片参数访问配置文件或目录。列表默认50项，每页1–100项，offset为0–2048；没有下一页时 `next_offset` 为null。每个相册最多列出2048个BMP；目录/非BMP/临时上传文件不出现在列表中。列表包含尺寸/头部不合格的现有BMP，并用 `header_valid` 标注，便于下载处理或删除；该字段不代表已检查每个像素的调色板。
+
+上传必须带 `Content-Length`，`Content-Type` 为 `image/bmp` 或 `application/octet-stream`，内容直接是BMP字节，不能使用 multipart/form-data。单文件上限2MiB；默认横向800×480，24位无压缩、正高度BMP，六色像素规则见 [图片格式](image-format.md)。旋转90/270度时要求480×800。固件不会把JPEG或普通照片自动转成六色BMP。同名（含FAT大小写等价名称）返回409，保留原文件；需要替换时由客户端显式删除旧照片再上传新文件。
+
+使用8KiB缓冲流式写入同目录 `.epaper-upload.tmp`，收齐、flush/fsync并关闭后，重新读入并检查BMP头部及所有六色像素，验证成功才改名成正式照片。上传中断、超时、非法图或写入失败会丢弃临时文件。意外断电留下的隐藏临时文件不会播放，下次上传可以重用。整个网络传输预算约60秒，单次socket收发超时5秒；尚未提供分段续传或Range下载。
+
+错误响应为JSON `error/message`：400参数错误、403缺少/错误令牌、404相册/照片不存在、409忙碌/同名/数量上限、413文件太大、415媒体类型错误、422BMP不合格、507SD空间不足/写入失败；其他SD读取问题返回500。刷屏、配置操作或重新索引期间，文件API返回409 `busy`，客户端应等待后重试。HTTP任务一次处理一个文件传输，传输期间其他请求可能等待，勿同时批量并发上传。
+
+上传/删除成功代表文件已写入/移除，索引随后由应用任务重建。轮询状态里的 `control.files_revision/index_pending/index_error`：修订号增加且pending为false、error为空才表示索引完成。文件更新不修改相册清单的选择和间隔。当前照片仍存在时保持画面与原换图截止时间；当前照片被删除则选择剩余可播放照片；删除最后一张后保留屏幕，停止自动换图，新上传可播放照片后恢复。新文件上传到停用相册时仍需通过相册设置启用，才参与轮播。若索引失败，文件操作可能已经成功，检查 `index_error` 并提交 `POST /api/rescan` 的 `{}` 重试，不能直接假设文件未写入。
+
+SD传输、配置写入、图片解码和显示通过共享锁互斥，禁止访问已卸载SD。电脑和普通USB外部供电保持在线，电池供电按计划深睡；睡眠时API不可访问；已开始的传输会先退出再停止服务和卸载SD。没有上板验证上传期间真实断电、SD满盘/掉卡等故障下FAT目录更新的可靠性。
+
+## Windows 命令行工具
+
+`tools/sd_photo_api.py` 仅使用Python标准库，自动读取令牌，上传/删除后等待索引完成。下载要求新的本地目标文件，避免覆盖原图片。示例：
+
+```powershell
+python tools/sd_photo_api.py --url http://192.168.1.100 albums
+python tools/sd_photo_api.py --url http://192.168.1.100 list comfy-qipao --limit 20
+python tools/sd_photo_api.py --url http://192.168.1.100 upload comfy-qipao processed.bmp --name 061_new.bmp
+python tools/sd_photo_api.py --url http://192.168.1.100 download comfy-qipao 061_new.bmp downloaded.bmp
+python tools/sd_photo_api.py --url http://192.168.1.100 delete comfy-qipao 061_new.bmp
+```
+
+原始请求示例（令牌替换为状态接口返回值）：
+
+```powershell
+curl.exe -H "X-Album-Token: TOKEN" "http://192.168.1.100/api/files?album=comfy-qipao&limit=20"
+curl.exe -X PUT -H "X-Album-Token: TOKEN" -H "Content-Type: image/bmp" --data-binary "@processed.bmp" "http://192.168.1.100/api/photo?album=comfy-qipao&name=061_new.bmp"
+curl.exe -H "X-Album-Token: TOKEN" "http://192.168.1.100/api/photo?album=comfy-qipao&name=061_new.bmp" -o downloaded.bmp
+curl.exe -X DELETE -H "X-Album-Token: TOKEN" "http://192.168.1.100/api/photo?album=comfy-qipao&name=061_new.bmp"
+curl.exe -X POST -H "X-Album-Token: TOKEN" -H "Content-Type: application/json" --data "{}" "http://192.168.1.100/api/rescan"
+```
+
+页面导航、卡片和弹窗的当前规则见[Web控制台](web-layout.md)。照片库合并浏览与上传；侧栏只保留照片库和播放设置。
+
+## Wi-Fi 可见网络扫描（0.14.21）
+
+`POST /api/wifi-scan` 使用X-Album-Token和application/json空对象`{}`，返回202及job_id。扫描由应用任务执行，与换图、文件传输、保存配置及校时任务互斥，不修改Wi-Fi配置或设备当前照片。
+
+`GET /api/wifi-scan` 使用同一令牌读取结果。排队/执行中返回job_id和state；完成后返回state=succeeded、networks、total、truncated。每个网络含ssid、rssi_dbm、channel、authmode（ESP-IDF认证枚举）和open；失败含error。最多返回信号最强的64个AP，隐藏SSID不列出。结果只保存在内存，页面以job_id匹配本轮扫描。扫描范围为ESP32-S3支持的2.4 GHz信道。
+
+
+## 离线配网（0.14.23）
+
+`GET /setup` 返回独立配网页面。`POST /api/wifi-provision` 使用控制令牌和空对象 `{}` 异步启动配网。`GET /api/captive-portal` 返回 `application/captive+json` 的 captive 和 user-portal-url 字段。`network.provisioning` 表示配网模式，`ap_ssid` / `ap_ip` 为开放热点信息。扫描和 Wi-Fi 保存 API 在 AP+STA 模式可用，其他控制命令及照片文件操作返回409。首次配网可启用此前关闭的 Wi-Fi / NTP。连接失败恢复原 SD 根配置，成功后热点保留30秒再关闭。详见 [离线配网](wifi-provisioning.md)。
+
+## 相册新建与删除（0.14.35）
+
+`POST /api/album-create`：请求 `{ "schema_version": 1, "id": "world-asia", "enabled": false, "interval_seconds": 900 }`，在相册根目录新建与 ID 同名的目录，并保存到相册清单。ID 为1–63位英文字母、数字、下划线或连字符，不允许 Windows 保留目录名称。同名目录不复用。默认停用，间隔120–604800秒。
+
+`POST /api/album-delete`：请求 `{ "schema_version": 1, "id": "world-asia" }`，删除空目录及对应清单记录。先用照片 API 删除照片。非空目录（包括隐藏或非BMP文件）会拒绝删除，防止误删未列出的内容；不支持递归删除。共享目录和嵌套目录拒绝删除。删除最后一个相册后允许清单为空，停止轮播并保留屏幕当前像素。
+
+两者带 `X-Album-Token`、`Content-Type: application/json`，返回202和job_id，轮询 `/api/status` 的 control 记录确认成功。配置写入采用既有临时文件/备份恢复流程，目录操作失败不修改清单，清单写入失败尝试回滚目录。配网、刷屏及其他SD操作期间保持互斥。
+
+命令行：`sd_photo_api.py --url http://设备IP create-album world-asia`；清空后使用 `delete-album world-asia`。`replace_album_library.py` 提供本机备份、完整替换和逐张下载SHA-256回读验证；`generate_world_album.py` 通过本机 ComfyUI 使用 Qwen Image 2.1 FP8生成100个全球地点，并转换为800×480六色24位BMP。
+
+照片传输启用 TCP_NODELAY，减少分块头和像素数据之间的等待。客户端对明确409 busy等待重试，对明确408 upload_incomplete、服务器确认丢弃部分数据的上传最多重试3次；同名冲突和不确定的写入超时不会盲目重试。
+
+运行期间 Wi-Fi 使用 WIFI_PS_NONE；完成电池模式的任务后仍按计划关闭 Wi-Fi 并深睡。该设置避免持续传输因 modem sleep 等待而超时。
+
+完整替换示例（在项目目录执行，输出目录放在代码库外）：
+
+```powershell
+python tools/generate_world_album.py --output ../world-landscapes-100
+python tools/replace_album_library.py --url http://192.168.1.100 --backup ../old-library --backup-only
+python tools/replace_album_library.py --url http://192.168.1.100 --source ../world-landscapes-100 --backup ../old-library
+```
+
+生成可继续已有工作流和本地图片。替换会先核对完整备份与100张新BMP，删除旧照片和空相册，新建5个停用相册，逐张上传并下载比较SHA-256，全部成功后启用轮播。相册按亚洲、欧洲、非洲、美洲、大洋洲与极地区域分组，每组20张，轮播间隔15分钟。`installation.json`记录最终文件清单和回读验证数量。
+
+上传响应包含SD刷盘和完整六色检查，客户端等待上限为120秒。替换中途失败时先核对设备文件清单；若5个目标相册均已创建且停用，可追加`--resume`继续。续传会拒绝多余相册、不同目录映射或未知照片，对已有文件先下载校验再跳过上传。超时不会自动重复发送写入请求。批量工具下载时遇到连接中断或超时，最多尝试4次；每次丢弃不完整响应，只有完整文件通过长度和SHA-256检查才计为成功。
+
+照片上传、下载和完整六色验证使用32 KiB文件缓冲；照片传输块大小为8 KiB。

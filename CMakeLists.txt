@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+set(COMPONENTS main)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(epaper_album VERSION 0.14.35)
+if(NOT IDF_TARGET STREQUAL "esp32s3")
+    message(FATAL_ERROR "This board profile requires IDF_TARGET=esp32s3")
+endif()
