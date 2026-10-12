@@ -14,6 +14,39 @@
 | 在 Windows 构建或更新固件 | [开发与安装](docs/development.md) |
 | 查看已验证范围和未完成事项 | [验证摘要](docs/validation.md) · [后续计划](docs/roadmap.md) |
 
+## 支持的硬件
+
+本项目面向微雪电子（Waveshare）的 **ESP32-S3-PhotoPainter** 开发，已在一台该型号设备上完成验证。实测与官方规格的对应关系、引脚和验证范围见[硬件说明](docs/hardware.md)；测试设备的具体 PCB 修订版本尚未确认。
+
+| 项目 | 目标硬件 |
+|---|---|
+| 主控与存储 | ESP32-S3，16 MB Flash，8 MB PSRAM |
+| 显示屏 | 7.3 英寸 E Ink Spectra 6（E6），800×480，黑、白、红、黄、蓝、绿六色 |
+| 存储与接口 | microSD 卡槽、USB Type-C、BOOT / KEY / PWR 三个按键 |
+| 时钟与环境 | PCF85063 系列 RTC、SHTC3 温湿度传感器 |
+| 音频 | 双麦克风、扬声器接口、ES7210 / ES8311 音频芯片 |
+
+### 官方资料
+
+- [产品页面](https://www.waveshare.com/product/displays/e-paper/esp32-s3-photopainter.htm)
+- [中文产品文档](https://docs.waveshare.net/ESP32-S3-PhotoPainter/) · [英文 Wiki](https://www.waveshare.com/wiki/ESP32-S3-PhotoPainter)
+- [板级原理图（PDF）](https://files.waveshare.com/wiki/ESP32-S3-PhotoPainter/ESP32-S3-PhotoPainter-Schematic.pdf)
+- [厂商示例代码与固件仓库](https://github.com/waveshareteam/ESP32-S3-PhotoPainter)
+
+以上链接用于查阅硬件和厂商资料。本仓库不分发厂商固件；本项目的配置文件、照片格式和操作方法见本仓库文档。
+
+### 第三方固件说明
+
+本项目是面向 Waveshare ESP32-S3-PhotoPainter 硬件独立开发的第三方固件，与 Waveshare 无隶属关系，也未经其官方背书。Waveshare 和产品名称用于标识兼容硬件。项目原创代码与文档采用 [MIT 许可证](LICENSE)，第三方代码与资源的来源及许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+### 实物照片
+
+| 正面 | 背面与接口 |
+|---|---|
+| 待补充：相框、屏幕与显示效果 | 待补充：BOOT / KEY / PWR、SD 卡槽与 USB 接口 |
+
+实物照片暂未上传，图片授权信息将在照片补充时一并标注。
+
 ## 已实现的功能
 
 - **离线相册**：SD 子目录分组，启用相册选择、顺序/随机播放、逐相册/轮流播放、定时换图和断点恢复。
