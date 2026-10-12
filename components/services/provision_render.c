@@ -7,7 +7,7 @@
 /* Provisioning uses black 0, white 1 and blue 5 only. */
 /* 8px spacing grid: 24px margins, two 360px columns, 32px gutter.
  * Each column contains a centered 232px QR area and an ink-centered caption.
- * Font drawing origins include offsets to align the visible text baselines. */
+ * Mixed Chinese/ASCII rows share a baseline from generated font metrics. */
 enum { MARGIN=24, CENTER=400, LABEL_GAP=24, COLUMN=360, GUTTER=32, QR_AREA=232,
        LEFT_QR=MARGIN+(COLUMN-QR_AREA)/2,
        RIGHT_QR=LEFT_QR+COLUMN+GUTTER };
@@ -42,12 +42,16 @@ static void centered_bitmap(uint8_t *frame,const provision_glyph_t *glyph,int ce
     int first,last;
     if(glyph_bounds(glyph,&first,&last)) bitmap(frame,glyph,center-(first+last)/2,y,color);
 }
-static void text(uint8_t *frame,const char *s,int x,int y,unsigned color)
+static void text(uint8_t *frame,const char *s,int x,int baseline,unsigned color)
 {
-    for(;*s;s++,x+=16) if(*s>=32 && *s<=126) bitmap(frame,ascii_glyphs[*s-32],x,y,color);
+    for(;*s;s++,x+=16) if(*s>=32 && *s<=126) {
+        const provision_glyph_t *glyph=ascii_glyphs[*s-32];
+        bitmap(frame,glyph,x,baseline-(int)glyph->baseline,color);
+    }
 }
-static void centered_row(uint8_t *frame,const provision_glyph_t *label,const char *value,int label_y,int value_y)
+static void centered_row(uint8_t *frame,const provision_glyph_t *label,const char *value,int baseline)
 {
+    int label_y=baseline-(int)label->baseline;
     int label_first,label_last;
     if(!glyph_bounds(label,&label_first,&label_last)) return;
     int value_first=800,value_last=-1,offset=0;
@@ -62,7 +66,7 @@ static void centered_row(uint8_t *frame,const provision_glyph_t *label,const cha
     int label_width=label_last-label_first+1,value_width=value_last-value_first+1;
     int left=CENTER-(label_width+LABEL_GAP+value_width)/2;
     bitmap(frame,label,left-label_first,label_y,0);
-    text(frame,value,left+label_width+LABEL_GAP-value_first,value_y,0);
+    text(frame,value,left+label_width+LABEL_GAP-value_first,baseline,0);
 }
 static bool qr(uint8_t *frame,const char *payload,int center,int y)
 {
@@ -80,13 +84,13 @@ bool epaper_provision_render(uint8_t *frame,const char *ssid)
     memset(frame,0x11,EPAPER_FRAME_BYTES);
     rect(frame,0,0,800,72,5);
     centered_bitmap(frame,&label_title,CENTER,14,1);
-    centered_row(frame,&label_hotspot,ssid,88,94);
+    centered_row(frame,&label_hotspot,ssid,111);
     centered_bitmap(frame,&label_wlan,LEFT_QR+QR_AREA/2,140,0);
     centered_bitmap(frame,&label_wechat,RIGHT_QR+QR_AREA/2,140,0);
     char payload[96];snprintf(payload,sizeof(payload),"WIFI:T:nopass;S:%s;;",ssid);
     bool valid=qr(frame,payload,LEFT_QR+QR_AREA/2,176) &&
                qr(frame,EPAPER_PROVISION_URL,RIGHT_QR+QR_AREA/2,176);
     centered_bitmap(frame,&label_fallback,CENTER,416,0);
-    centered_row(frame,&label_address,EPAPER_PROVISION_URL,448,452);
+    centered_row(frame,&label_address,EPAPER_PROVISION_URL,469);
     return valid;
 }
