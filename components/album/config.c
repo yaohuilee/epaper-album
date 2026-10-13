@@ -74,6 +74,28 @@ static bool number(const cJSON *object,const char *key,uint32_t default_value,
        v->valuedouble>maximum || v->valuedouble!=(double)(uint32_t)v->valuedouble) return false;
     *out=(uint32_t)v->valuedouble;return true;
 }
+static bool night_time(const cJSON *object,const char *key,uint32_t fallback,uint32_t *out)
+{
+    const cJSON *v=item(object,key);
+    if(!v) {*out=fallback;return true;}
+    if(!cJSON_IsString(v) || strlen(v->valuestring)!=5) return false;
+    const char *s=v->valuestring;
+    if(s[2]!=':' || !isdigit((unsigned char)s[0]) || !isdigit((unsigned char)s[1]) ||
+       !isdigit((unsigned char)s[3]) || !isdigit((unsigned char)s[4])) return false;
+    unsigned h=(s[0]-'0')*10+s[1]-'0',m=(s[3]-'0')*10+s[4]-'0';
+    if(h>23 || m>59) return false;
+    *out=h*60+m;return true;
+}
+uint64_t epaper_album_night_wait_us(const epaper_album_config_t *config,uint64_t utc_us)
+{
+    /* An unset/invalid system clock must not suppress playback. */
+    if(!config || !config->night_enabled || utc_us<1577836800000000ULL) return 0;
+    uint64_t day=86400000000ULL;
+    uint64_t local=(utc_us+28800000000ULL)%day;
+    uint64_t start=(uint64_t)config->night_start*60000000ULL,end=(uint64_t)config->night_end*60000000ULL;
+    bool inside=start<end?(local>=start && local<end):(local>=start || local<end);
+    return inside?(end>local?end-local:day-local+end):0;
+}
 static bool safe_path(const char *path,bool absolute)
 {
     if(!path || !*path || (path[0]=='/')!=absolute) return false;
@@ -189,6 +211,12 @@ bool epaper_album_parse(const char *text,const char *manifest_text,epaper_album_
     if(!boolean(playback,"recursive",false,&recursive) || recursive) goto finish;
     uint32_t interval;
     if(!number(playback,"default_interval_seconds",900,120,604800,&interval)) goto finish;
+    const cJSON *night=item(playback,"night_pause");
+    reason="Invalid night pause: use distinct HH:mm start/end times";
+    if((night && (!cJSON_IsObject(night) || unknown(night,"|enabled|start|end|"))) ||
+       !boolean(night,"enabled",false,&c->night_enabled) ||
+       !night_time(night,"start",1320,&c->night_start) ||
+       !night_time(night,"end",360,&c->night_end) || c->night_start==c->night_end) goto finish;
     const cJSON *order=item(playback,"order"),*strategy=item(playback,"album_strategy");
     if(order) {
         if(!cJSON_IsString(order)) goto finish;
@@ -219,7 +247,7 @@ bool epaper_album_parse(const char *text,const char *manifest_text,epaper_album_
             unknown(display,"|rotation_degrees|on_invalid_image|") ||
             unknown(power,"|sleep_between_events|low_battery_policy|") ||
             unknown(manifest,"|schema_version|playback|albums|") ||
-            unknown(playback,"|enabled|default_interval_seconds|order|album_strategy|recursive|resume_position|");
+            unknown(playback,"|enabled|default_interval_seconds|order|album_strategy|recursive|resume_position|night_pause|");
         for(const cJSON *a=albums->child;a;a=a->next)
             warning=warning || unknown(a,"|id|name|directory|enabled|interval_seconds|");
         snprintf(error,error_size,"%s",warning?"Unknown fields ignored; check spelling against schema":"");
@@ -236,15 +264,27 @@ bool epaper_album_edit(const char *global,const char *manifest,const char *reque
     cJSON *edit=parse(request),*doc=parse(manifest);
     bool ok=false;
     const char *reason="Invalid settings JSON";
-    if(!edit || !doc || unknown(edit,"|schema_version|album_ids|interval_seconds|")) goto end;
+    if(!edit || !doc || unknown(edit,"|schema_version|album_ids|interval_seconds|night_pause|")) goto end;
     const cJSON *ids=item(edit,"album_ids"),*interval=item(edit,"interval_seconds");
+    const cJSON *night=item(edit,"night_pause");
     uint32_t seconds=900;
     reason="Choose at least one album; interval must be 120..604800 whole seconds";
-    if((!ids && !interval) || (ids && (!cJSON_IsArray(ids) || cJSON_GetArraySize(ids)<1 || cJSON_GetArraySize(ids)>EPAPER_MAX_ALBUMS)) ||
+    if((!ids && !interval && !night) || (ids && (!cJSON_IsArray(ids) || cJSON_GetArraySize(ids)<1 || cJSON_GetArraySize(ids)>EPAPER_MAX_ALBUMS)) ||
        (interval && !number(edit,"interval_seconds",900,120,604800,&seconds))) goto end;
     cJSON *albums=cJSON_GetObjectItemCaseSensitive(doc,"albums");
     cJSON *playback=cJSON_GetObjectItemCaseSensitive(doc,"playback");
     if(!cJSON_IsArray(albums) || !cJSON_IsObject(playback)) goto end;
+    if(night) {
+        uint32_t start,end;bool enabled;
+        reason="Invalid night pause: enabled and distinct HH:mm start/end are required";
+        if(!cJSON_IsObject(night) || unknown(night,"|enabled|start|end|") ||
+           !item(night,"enabled") || !item(night,"start") || !item(night,"end") ||
+           !boolean(night,"enabled",false,&enabled) || !night_time(night,"start",1320,&start) ||
+           !night_time(night,"end",360,&end) || start==end) goto end;
+        cJSON *copy=cJSON_Duplicate(night,true);if(!copy) goto end;
+        cJSON_DeleteItemFromObjectCaseSensitive(playback,"night_pause");
+        if(!cJSON_AddItemToObject(playback,"night_pause",copy)) {cJSON_Delete(copy);goto end;}
+    }
     uint32_t previous_default;
     if(!number(playback,"default_interval_seconds",900,120,604800,&previous_default)) goto end;
     reason="Unknown or duplicate album ID";

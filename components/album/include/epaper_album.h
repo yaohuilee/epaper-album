@@ -22,6 +22,8 @@ typedef struct {
 typedef struct {
     char root[256],manifest[128];
     bool enabled,shuffle,resume,sleep;
+    bool night_enabled;
+    uint32_t night_start,night_end; /* Beijing minutes after midnight. */
     int rotation;
     epaper_strategy_t strategy;
     epaper_time_config_t time;
@@ -51,6 +53,7 @@ typedef struct {
 
 bool epaper_album_parse(const char *global_json,const char *manifest_json,
     epaper_album_config_t *out,char *error,size_t error_size);
+uint64_t epaper_album_night_wait_us(const epaper_album_config_t *config,uint64_t utc_us);
 bool epaper_album_location(const char *global_json,char *root,size_t root_size,
     char *manifest,size_t manifest_size,char *error,size_t error_size);
 bool epaper_json_read(const char *path,char **out);

@@ -277,6 +277,39 @@ int main(void)
     CHECK(epaper_album_settings("{\"schema_version\":1,\"album_ids\":[\"world-new\"],\"interval_seconds\":900}",error,sizeof(error))==ESP_OK);
     CHECK(catalog->total==1 && refreshes==before+1 && !automatic_stopped && !strcmp(live.current_id,"world-new"));
     CHECK(epaper_album_manage("{\"schema_version\":1,\"id\":\"world-new\"}",true,error,sizeof(error))!=ESP_OK);
+    /* Beijing 22:00..06:00: persist independently and defer deadlines through sleep. */
+    const uint64_t day=1767225600000000ULL,hour=3600000000ULL;
+    uint64_t old_deadline=deadline;before=refreshes;
+    CHECK(epaper_album_settings("{\"schema_version\":1,\"night_pause\":{\"enabled\":true,\"start\":\"22:00\",\"end\":\"06:00\"}}",error,sizeof(error))==ESP_OK);
+    CHECK(catalog->config.night_enabled && deadline==old_deadline && refreshes==before);
+    CHECK(epaper_album_settings("{\"schema_version\":1,\"night_pause\":{\"enabled\":true,\"start\":\"22:00\",\"end\":\"06:00\"}}",error,sizeof(error))==ESP_OK);
+    CHECK(deadline==old_deadline && refreshes==before);
+    CHECK(epaper_album_night_wait_us(&catalog->config,1000000)==0);
+    CHECK(epaper_album_night_wait_us(&catalog->config,day+14*hour-1)==0);
+    CHECK(epaper_album_night_wait_us(&catalog->config,day+14*hour)==8*hour);
+    CHECK(epaper_album_night_wait_us(&catalog->config,day+22*hour-1)==1);
+    CHECK(epaper_album_night_wait_us(&catalog->config,day+22*hour)==0);
+    clock_us=day+14*hour;deadline=clock_us-1;retry_at=0;
+    CHECK(!epaper_album_due() && epaper_album_sleep_us()==8*hour);
+    epaper_album_status(&status);CHECK(status.night_paused);
+    reboot(true);CHECK(!epaper_album_due() && catalog->config.night_enabled && refreshes==before);
+    clock_us=day+22*hour;CHECK(epaper_album_due());
+    CHECK(epaper_album_next()==ESP_OK);CHECK(!epaper_album_due());
+    /* A due time inside the pause moves directly to the morning boundary. */
+    clock_us=day+14*hour-60000000;deadline=day+14*hour+60000000;
+    CHECK(epaper_album_sleep_us()==8*hour+60000000);
+    clock_us=day+15*hour;CHECK(epaper_album_next()==ESP_OK); /* manual remains available */
+    CHECK(!epaper_album_due());
+    CHECK(epaper_album_settings("{\"schema_version\":1,\"night_pause\":{\"enabled\":true,\"start\":\"24:00\",\"end\":\"06:00\"}}",error,sizeof(error))!=ESP_OK);
+    CHECK(epaper_album_settings("{\"schema_version\":1,\"night_pause\":{\"enabled\":true,\"start\":\"22:00\",\"end\":\"22:00\"}}",error,sizeof(error))!=ESP_OK);
+    CHECK(epaper_album_settings("{\"schema_version\":1,\"night_pause\":{\"enabled\":true,\"start\":\"9:00\",\"end\":\"06:00\"}}",error,sizeof(error))!=ESP_OK);
+    CHECK(epaper_album_settings("{\"schema_version\":1,\"night_pause\":{\"enabled\":false,\"start\":\"22:00\",\"end\":\"06:00\"}}",error,sizeof(error))==ESP_OK);
+    deadline=clock_us-1;CHECK(epaper_album_due());
+    /* Non-crossing ranges are supported; their end is exclusive. */
+    catalog->config.night_enabled=true;catalog->config.night_start=540;catalog->config.night_end=1080;
+    CHECK(epaper_album_night_wait_us(&catalog->config,day+hour)==9*hour);
+    CHECK(epaper_album_night_wait_us(&catalog->config,day+10*hour)==0);
+    catalog->config.night_enabled=false;catalog->config.night_start=1320;catalog->config.night_end=360;
     CHECK(!remove(".local/test-sd/albums/world-new/001.bmp"));CHECK(epaper_album_rescan()==ESP_OK);
     CHECK(epaper_album_manage("{\"schema_version\":1,\"id\":\"world-new\"}",true,error,sizeof(error))==ESP_OK);
     CHECK(!remove(".local/test-sd/upload-fixture.bmp"));

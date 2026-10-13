@@ -437,10 +437,18 @@ void epaper_http_update(bool usb_host)
     cJSON *a=cJSON_AddObjectToObject(root,"album");
     cJSON_AddBoolToObject(a,"ready",album.ready);cJSON_AddBoolToObject(a,"enabled",album.enabled);
     cJSON_AddBoolToObject(a,"automatic_stopped",album.automatic_stopped);
+    cJSON_AddBoolToObject(a,"night_paused",album.night_paused);
     cJSON_AddNumberToObject(a,"albums",album.albums);cJSON_AddNumberToObject(a,"photos",album.photos);
     cJSON_AddStringToObject(a,"current_album",album.current_album);cJSON_AddStringToObject(a,"current_photo",album.current_photo);
     cJSON_AddNumberToObject(a,"interval_seconds",album.interval);cJSON_AddNumberToObject(a,"next_seconds",album.next_us/1000000);
     const epaper_album_config_t *config=epaper_album_configuration();
+    cJSON *night=cJSON_AddObjectToObject(a,"night_pause");
+    char night_start[6],night_end[6];
+    unsigned start=config?config->night_start:1320,end=config?config->night_end:360;
+    snprintf(night_start,sizeof(night_start),"%02u:%02u",(start/60)%24,start%60);
+    snprintf(night_end,sizeof(night_end),"%02u:%02u",(end/60)%24,end%60);
+    cJSON_AddBoolToObject(night,"enabled",config && config->night_enabled);
+    cJSON_AddStringToObject(night,"start",night_start);cJSON_AddStringToObject(night,"end",night_end);
     cJSON *options=cJSON_AddArrayToObject(a,"options");
     if(config) for(unsigned i=0;i<config->album_count;i++) {
         cJSON *option=cJSON_CreateObject();if(!option) continue;

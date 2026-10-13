@@ -6,7 +6,12 @@
     "order": "sequential",
     "album_strategy": "album_by_album",
     "recursive": false,
-    "resume_position": true
+    "resume_position": true,
+    "night_pause": {
+      "enabled": false,
+      "start": "22:00",
+      "end": "06:00"
+    }
   },
   "albums": [
     {

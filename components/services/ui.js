@@ -48,7 +48,7 @@ function tickClock(){
 function updateClock(rtc){
   const epoch=rtc?.valid&&rtc.utc?Date.parse(rtc.calendar):NaN;
   clockEpoch=Number.isFinite(epoch)?epoch+Math.max(0,Number(rtc.age_ms)||0):null;clockSample=performance.now();
-  clockNode.title=clockEpoch==null?'设备 RTC 时间无效':'设备 RTC · 北京时间';tickClock();
+  clockNode.title=clockEpoch==null?'设备 RTC 时间无效':'设备 RTC · 设备时间';tickClock();
 }
 function clockOffline(){uptimeSeconds=null;countdowns=null;clockEpoch=null;clockNode.title='设备离线';tickClock()}
 setInterval(tickClock,1000);

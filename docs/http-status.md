@@ -30,13 +30,21 @@
 | 路径 | 请求体 | 行为 |
 |---|---|---|
 | `POST /api/next` | `{}` | 按设备播放策略下一张 |
-| `POST /api/settings` | 下方示例 | 保存相册选择、停留间隔或两者 |
+| `POST /api/settings` | 下方示例 | 保存相册选择、停留间隔或夜间暂停 |
 
 ```json
 {"schema_version":1,"album_ids":["family","travel"],"interval_seconds":900}
 ```
 
-至少提供 `album_ids`、`interval_seconds` 中的一项。不允许空相册列表、未知/重复ID或非法间隔。
+至少提供 `album_ids`、`interval_seconds`、`night_pause` 中的一项。不允许空相册列表、未知/重复ID或非法间隔。
+
+夜间暂停可单独提交，不改变相册选择、停留间隔或当前换图截止时间：
+
+```json
+{"schema_version":1,"night_pause":{"enabled":true,"start":"22:00","end":"06:00"}}
+```
+
+时间按设备显示时间的24小时 `HH:mm` 表示：开始早于结束为当天时段，晚于结束为跨午夜，两者不能相同。`enabled`、`start`、`end` 均必填。网页每15分钟一档，API仍接受合法的分钟值，旧配置不取整。缺省关闭，预设22:00–06:00。设置保存在相册清单的 `playback.night_pause`；状态接口返回 `album.night_pause` 和 `album.night_paused`，`album.next_seconds` 已计入暂停时间。暂停时段包含开始时刻，不包含结束时刻；手动下一张不受限制。
 
 - 只提交相册选择：保留默认及各相册间隔。
 - 只提交间隔：更新默认及已启用相册间隔，保留停用相册的间隔。

@@ -6,6 +6,7 @@
 #include "esp_random.h"
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "cJSON.h"
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
@@ -197,17 +198,25 @@ esp_err_t epaper_album_next(void)
 }
 esp_err_t epaper_display_bmp(const char *path)
 { (void)path;return ESP_ERR_NOT_SUPPORTED; /* Prevent bypassing persistent album state. */ }
+static uint64_t automatic_target(uint64_t now)
+{
+    uint64_t target=deadline>retry_at?deadline:retry_at;
+    uint64_t wait=epaper_album_night_wait_us(&catalog->config,now);
+    if(wait && target<now+wait) target=now+wait;
+    target+=epaper_album_night_wait_us(&catalog->config,target);
+    return target;
+}
 bool epaper_album_due(void)
 {
     return initialized && !automatic_stopped && catalog->config.enabled &&
-        live.current_album!=UINT32_MAX && now_us()>=deadline && now_us()>=retry_at;
+        live.current_album!=UINT32_MAX && now_us()>=automatic_target(now_us());
 }
 bool epaper_album_can_sleep(void)
 { return initialized && catalog->config.sleep; }
 uint64_t epaper_album_sleep_us(void)
 {
     if(!initialized || automatic_stopped || !catalog->config.enabled) return 0;
-    uint64_t now=now_us(),target=deadline>retry_at?deadline:retry_at;
+    uint64_t now=now_us(),target=automatic_target(now);
     return target>now?target-now:1000000;
 }
 void epaper_album_prepare_sleep(void)
@@ -224,6 +233,7 @@ void epaper_album_status(epaper_album_status_t *out)
     *out=(epaper_album_status_t){0};
     if(!initialized || !catalog) return;
     out->ready=true;out->enabled=catalog->config.enabled;out->automatic_stopped=automatic_stopped;
+    out->night_paused=epaper_album_night_wait_us(&catalog->config,now_us())>0;
     out->albums=catalog->config.album_count;out->photos=(unsigned)catalog->total;
     memcpy(out->current_album,live.current_id,sizeof(out->current_album));
     memcpy(out->current_photo,live.current_path,sizeof(out->current_photo));
@@ -318,6 +328,22 @@ esp_err_t epaper_album_settings(const char *request,char *error,size_t size)
     if(strcmp(config->root,catalog->config.root) || strcmp(config->manifest,catalog->config.manifest) ||
        config->rotation!=catalog->config.rotation || memcmp(&config->time,&catalog->config.time,sizeof(config->time))) {
         snprintf(error,size,"SD configuration changed externally; restart first");goto end;
+    }
+    bool night_enabled=config->night_enabled;
+    uint32_t night_start=config->night_start,night_end=config->night_end;
+    cJSON *edit=cJSON_Parse(request);
+    if(!edit) {err=ESP_ERR_NO_MEM;goto end;}
+    bool night_request=cJSON_HasObjectItem(edit,"night_pause") && !cJSON_HasObjectItem(edit,"album_ids") && !cJSON_HasObjectItem(edit,"interval_seconds");
+    cJSON_Delete(edit);
+    config->night_enabled=catalog->config.night_enabled;
+    config->night_start=catalog->config.night_start;config->night_end=catalog->config.night_end;
+    bool only_night=night_request && !memcmp(config,&catalog->config,sizeof(*config));
+    config->night_enabled=night_enabled;config->night_start=night_start;config->night_end=night_end;
+    if(only_night) {
+        if(!epaper_json_replace(path,output)) {snprintf(error,size,"Cannot save SD configuration; playback unchanged");goto end;}
+        catalog->config.night_enabled=config->night_enabled;
+        catalog->config.night_start=config->night_start;catalog->config.night_end=config->night_end;
+        cache_save(global,output);err=ESP_OK;goto end;
     }
     if(!epaper_catalog_scan(EPAPER_SD_MOUNT,config,replacement,error,size)) goto end;
     if(!replacement->total) {snprintf(error,size,"Selected albums contain no valid photos");goto end;}

@@ -11,7 +11,7 @@ const epaper_time_config_t *epaper_album_time_config(void);
 void epaper_album_clock_adjust(int64_t delta_us);
 esp_err_t epaper_display_frame(const uint8_t *frame);
 typedef struct {
-    bool ready,enabled,automatic_stopped;
+    bool ready,enabled,automatic_stopped,night_paused;
     unsigned albums,photos;
     char current_album[EPAPER_ID_MAX],current_photo[EPAPER_PATH_MAX];
     uint32_t interval;
