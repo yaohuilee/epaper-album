@@ -11,3 +11,5 @@ bool epaper_http_process(void);
 /* Shared with the main task: excludes filesystem transfers and display/config access. */
 bool epaper_http_sd_try_lock(void);
 void epaper_http_sd_unlock(void);
+
+unsigned epaper_http_next_revision(void);

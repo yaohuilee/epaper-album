@@ -6,7 +6,18 @@ config EPAPER_IDLE_SECONDS
     int "Awake maintenance window before deep sleep"
     range 5 120
     default 10
+config EPAPER_ESP_TTS
+    bool "Enable offline ESP-TTS Xiaole"
+    default y
+    help
+        Run tools/Install-EspTts.ps1 first. Automatic announcements and previews
+        synthesize Chinese speech on-device with the Xiaole Flash voice image.
 endmenu
+config EPAPER_DIAGNOSTICS
+    bool "Enable runtime profiling and bounded USB-only network fault test"
+    default n
+    select FREERTOS_GENERATE_RUN_TIME_STATS
+    select FREERTOS_USE_TRACE_FACILITY
 config EPAPER_PROVISION_WIFI
     bool "Provision SD Wi-Fi settings from a local private build header"
     default n

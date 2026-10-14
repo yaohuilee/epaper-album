@@ -1,5 +1,7 @@
 #include "provision_address.h"
 #include "epaper_network.h"
+#include "epaper_profile.h"
+#include "sdkconfig.h"
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
@@ -14,7 +16,8 @@
 #define CONNECTED 1
 #define FAILED 2
 static esp_netif_t *netif,*ap_netif;
-static bool provisioning,connecting;
+static bool provisioning;
+static volatile bool connecting;
 static char ap_ssid[33];
 static int64_t finish_at;
 static EventGroupHandle_t events;
@@ -22,6 +25,39 @@ static unsigned retries;
 static bool system_ready,initialized,started,wifi_handler,ip_handler;
 static volatile bool closing;
 static esp_event_handler_instance_t wh,ih;
+#ifdef CONFIG_EPAPER_DIAGNOSTICS
+static portMUX_TYPE fault_lock=portMUX_INITIALIZER_UNLOCKED;
+static int64_t fault_start_at,fault_end_at;
+static bool fault_disconnected,fault_recovering;
+bool epaper_network_fault_active(void)
+{
+    portENTER_CRITICAL(&fault_lock);bool active=fault_end_at!=0;portEXIT_CRITICAL(&fault_lock);return active;
+}
+esp_err_t epaper_network_fault_start(void)
+{
+    if(!epaper_profile_available()||!epaper_network_online()||provisioning)return ESP_ERR_INVALID_STATE;
+    portENTER_CRITICAL(&fault_lock);
+    if(fault_end_at){portEXIT_CRITICAL(&fault_lock);return ESP_ERR_INVALID_STATE;}
+    fault_start_at=esp_timer_get_time()+1000000;fault_end_at=fault_start_at+15000000;fault_disconnected=fault_recovering=false;
+    portEXIT_CRITICAL(&fault_lock);return ESP_OK;
+}
+void epaper_network_fault_tick(void)
+{
+    int64_t now=esp_timer_get_time();bool disconnect=false,reconnect=false,complete=false,online=epaper_network_online();
+    portENTER_CRITICAL(&fault_lock);
+    if(fault_end_at && now>=fault_start_at && !fault_disconnected){fault_disconnected=true;disconnect=true;}
+    if(fault_end_at && now>=fault_end_at && !fault_recovering){fault_recovering=true;fault_end_at=now+10000000;reconnect=true;}
+    else if(fault_end_at && fault_recovering && (online||now>=fault_end_at)){fault_start_at=fault_end_at=0;complete=true;}
+    portEXIT_CRITICAL(&fault_lock);
+    if(disconnect){connecting=false;epaper_profile_phase(PROFILE_FAULT,true);esp_wifi_disconnect();}
+    if(reconnect){connecting=true;retries=0;esp_wifi_connect();}
+    if(complete)epaper_profile_phase(PROFILE_FAULT,false);
+}
+#else
+bool epaper_network_fault_active(void){return false;}
+void epaper_network_fault_tick(void){}
+esp_err_t epaper_network_fault_start(void){return ESP_ERR_NOT_SUPPORTED;}
+#endif
 static void event(void *arg,esp_event_base_t base,int32_t id,void *data)
 {
     (void)arg;(void)data;

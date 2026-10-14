@@ -145,9 +145,8 @@ bool epaper_album_parse(const char *text,const char *manifest_text,epaper_album_
     if(!global || !manifest || !c) goto finish;
     reason="Invalid album root or manifest path";
     if(!location(global,c->root,sizeof(c->root),c->manifest,sizeof(c->manifest))) goto finish;
-    reason="Announcements and activity are not implemented";
-    if(unsupported_enabled(global,"announcement","enabled") ||
-       unsupported_enabled(global,"activity","enabled")) goto finish;
+    reason="Activity detection is not implemented";
+    if(unsupported_enabled(global,"activity","enabled")) goto finish;
     const cJSON *network=item(global,"network");
     reason="Invalid Wi-Fi or time synchronization configuration";
     if(network && !cJSON_IsObject(network)) goto finish;

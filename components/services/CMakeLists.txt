@@ -1,9 +1,23 @@
-idf_component_register(SRCS "services.c" "display.c" "runtime.c" "time_sync.c" "wifi_provision.c" "network.c" "captive_dns.c" "provision_screen.c" "provision_render.c" "qrcodegen.c" "http_status.c" "http_files.c" INCLUDE_DIRS "include"
-    REQUIRES board album core devices storage nvs_flash esp_timer freertos esp_wifi esp_netif esp_event esp_http_server esp_app_format esp_psram esp_hw_support spi_flash fatfs
-    EMBED_TXTFILES "status.html" "albums.html" "ui.css" "ui.js" "setup.html")
+set(optional_tts)
+if(EXISTS "${PROJECT_DIR}/.local/esp_tts_sdk/CMakeLists.txt")
+    list(APPEND optional_tts esp_tts_sdk)
+endif()
+idf_component_register(SRCS "services.c" "display.c" "runtime.c" "time_sync.c" "wifi_provision.c" "network.c" "captive_dns.c" "provision_screen.c" "provision_render.c" "qrcodegen.c" "http_status.c" "http_files.c" "announcement.c" INCLUDE_DIRS "include"
+    REQUIRES ${optional_tts} board album core devices storage nvs_flash esp_timer freertos esp_wifi esp_netif esp_event esp_http_server esp_app_format esp_psram esp_hw_support spi_flash fatfs mbedtls
+    EMBED_TXTFILES "status.html" "albums.html" "ui.css" "ui.js" "announcements.js" "setup.html")
 if(CONFIG_EPAPER_PROVISION_WIFI)
     if(NOT EXISTS "${PROJECT_DIR}/.local/wifi_credentials.h")
         message(FATAL_ERROR "Import WIFI.txt with tools/import_wifi.py before enabling provisioning")
     endif()
     target_include_directories(${COMPONENT_LIB} PRIVATE "${PROJECT_DIR}/.local")
+endif()
+target_sources(${COMPONENT_LIB} PRIVATE "tts_preview.c")
+target_sources(${COMPONENT_LIB} PRIVATE "profile.c")
+if(CONFIG_EPAPER_ESP_TTS)
+    if(NOT TARGET idf::esp_tts_sdk)
+        message(FATAL_ERROR "Run tools/Install-EspTts.ps1 before enabling ESP-TTS")
+    endif()
+    target_link_libraries(${COMPONENT_LIB} PUBLIC idf::esp_tts_sdk)
+    set(voice_image "${PROJECT_DIR}/.local/esp_tts_sdk/esp-tts/esp_tts_chinese/esp_tts_voice_data_xiaole.dat")
+    esptool_py_flash_to_partition(flash "voice_data" "${voice_image}")
 endif()

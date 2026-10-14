@@ -1,7 +1,9 @@
 #include "provision_address.h"
+#include "epaper_announcement.h"
 #include "epaper_http.h"
 #include "epaper_http_internal.h"
 #include "epaper_network.h"
+#include "epaper_profile.h"
 #include "epaper_runtime.h"
 #include "epaper_services.h"
 #include "epaper_time_sync.h"
@@ -9,6 +11,7 @@
 #include "epaper_storage.h"
 #include "esp_http_server.h"
 #include "esp_app_desc.h"
+#include "esp_system.h"
 #include "esp_psram.h"
 #include "esp_flash.h"
 #include "esp_mac.h"
@@ -23,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 
 static httpd_handle_t server;
 static SemaphoreHandle_t lock;
@@ -30,8 +34,9 @@ static char *snapshot;
 static int64_t snapshot_rtc_sample_us;
 static char token[33],pending_body[4097],job_error[160];
 static bool last_usb_host;
-static unsigned job_id;
-static bool pending,running,settings_job,rescan_job,time_job,time_settings_job,wifi_job,wifi_scan_job,provision_job,album_create_job,album_delete_job;
+static unsigned job_id,next_revision;
+unsigned epaper_http_next_revision(void){return next_revision;}
+static bool pending,running,settings_job,rescan_job,time_job,time_settings_job,wifi_job,wifi_scan_job,provision_job,album_create_job,album_delete_job,announcement_job,announcement_pause_job,announcement_test_job;
 static char *wifi_scan_result;
 static const char *job_state="idle";
 static SemaphoreHandle_t sd_lock;
@@ -53,16 +58,18 @@ bool epaper_http_authorized(httpd_req_t *req)
 }
 bool epaper_http_file_begin(void)
 {
-    if(epaper_network_provisioning() || !epaper_http_sd_try_lock()) return false;
+    if(epaper_network_provisioning() || !epaper_announcement_admit(75) || !epaper_http_sd_try_lock()) return false;
     xSemaphoreTake(lock,portMAX_DELAY);
     bool available=!(pending||running||files_busy||index_pending||index_running);
     if(available) files_busy=true;
     xSemaphoreGive(lock);
     if(!available) epaper_http_sd_unlock();
+    else epaper_profile_phase(PROFILE_TRANSFER,true);
     return available;
 }
 void epaper_http_file_end(bool changed)
 {
+    epaper_profile_phase(PROFILE_TRANSFER,false);
     xSemaphoreTake(lock,portMAX_DELAY);files_busy=false;
     if(changed) {files_revision++;index_pending=true;index_error[0]=0;}
     xSemaphoreGive(lock);epaper_http_sd_unlock();
@@ -72,13 +79,14 @@ extern const char setup_page[] asm("_binary_setup_html_start");
 extern const char album_page[] asm("_binary_albums_html_start");
 extern const char ui_css[] asm("_binary_ui_css_start");
 extern const char ui_js[] asm("_binary_ui_js_start");
+extern const char announcement_js[] asm("_binary_announcements_js_start");
 static esp_err_t ui_asset(httpd_req_t *req)
 {
     bool css=!strncmp(req->uri,"/ui.css",7);
     httpd_resp_set_type(req,css?"text/css; charset=utf-8":"text/javascript; charset=utf-8");
     httpd_resp_set_hdr(req,"Cache-Control","no-store");
     httpd_resp_set_hdr(req,"X-Content-Type-Options","nosniff");
-    return httpd_resp_send(req,css?ui_css:ui_js,HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(req,css?ui_css:!strcmp(req->uri,"/announcements.js")?announcement_js:ui_js,HTTPD_RESP_USE_STRLEN);
 }
 static esp_err_t captive_redirect(httpd_req_t *req,httpd_err_code_t code)
 {
@@ -113,6 +121,27 @@ static esp_err_t index_page(httpd_req_t *req)
     httpd_resp_set_hdr(req,"X-Content-Type-Options","nosniff");
     return httpd_resp_send(req,epaper_network_provisioning()?setup_page:page,HTTPD_RESP_USE_STRLEN);
 }
+#ifdef CONFIG_EPAPER_DIAGNOSTICS
+static esp_err_t diagnostics(httpd_req_t *req)
+{
+    if(!epaper_http_authorized(req)) {httpd_resp_set_status(req,"403 Forbidden");return httpd_resp_sendstr(req,"Unauthorized");}
+    if(req->method==HTTP_POST) {
+        char body[3]={0};size_t received=0;
+        if(req->content_len!=2){httpd_resp_set_status(req,"400 Bad Request");return httpd_resp_sendstr(req,"Use empty JSON object");}
+        while(received<2){int n=httpd_req_recv(req,body+received,2-received);if(n<=0)return ESP_FAIL;received+=(size_t)n;}
+        if(strcmp(body,"{}")){httpd_resp_set_status(req,"400 Bad Request");return httpd_resp_sendstr(req,"Use empty JSON object");}
+        bool fault=!strcmp(req->uri,"/api/diagnostics/network-fault");
+        if(fault && !last_usb_host){httpd_resp_set_status(req,"409 Conflict");return httpd_resp_sendstr(req,"Network fault requires USB host");}
+        bool ok=fault?epaper_network_fault_start()==ESP_OK:epaper_profile_reset();
+        if(!ok){httpd_resp_set_status(req,"409 Conflict");return httpd_resp_sendstr(req,"Profiler or network busy");}
+    }
+    cJSON *root=cJSON_CreateObject();if(!root)return ESP_ERR_NO_MEM;
+    epaper_profile_json(root);char *json=cJSON_PrintUnformatted(root);cJSON_Delete(root);
+    if(!json)return ESP_ERR_NO_MEM;
+    httpd_resp_set_type(req,"application/json");httpd_resp_set_hdr(req,"Cache-Control","no-store");
+    esp_err_t err=httpd_resp_sendstr(req,json);free(json);return err;
+}
+#endif
 static esp_err_t status_json(httpd_req_t *req)
 {
     xSemaphoreTake(lock,portMAX_DELAY);
@@ -195,10 +224,12 @@ static esp_err_t command(httpd_req_t *req)
     bool album_create=!strcmp(req->uri,"/api/album-create"),album_delete=!strcmp(req->uri,"/api/album-delete");
     bool time_settings=!strcmp(req->uri,"/api/time-settings");
     bool wifi_settings=!strcmp(req->uri,"/api/wifi-settings");
+    bool announcement=!strcmp(req->uri,"/api/announcement-settings"),announcement_pause=!strcmp(req->uri,"/api/announcement-pause-settings"),announcement_test=!strcmp(req->uri,"/api/announcement-test");
+    if(strcmp(req->uri,"/api/next") && !epaper_announcement_admit(150)){free(body);return command_error(req,"409 Conflict","Announcement is busy or imminent; retry later");}
     if(epaper_network_provisioning() && !wifi_settings && strcmp(req->uri,"/api/wifi-scan")) {
         free(body);return command_error(req,"409 Conflict","Provisioning mode accepts Wi-Fi commands only");
     }
-    if(!settings && !time_settings && !wifi_settings && !album_create && !album_delete && strcmp(body,"{}")) {free(body);return command_error(req,"400 Bad Request","Expected empty JSON object");}
+    if(!settings && !time_settings && !wifi_settings && !album_create && !album_delete && !announcement && !announcement_pause && !announcement_test && strcmp(body,"{}")) {free(body);return command_error(req,"400 Bad Request","Expected empty JSON object");}
     xSemaphoreTake(lock,portMAX_DELAY);
     if(pending || running || files_busy || index_pending || index_running) {
         xSemaphoreGive(lock);free(body);
@@ -206,7 +237,7 @@ static esp_err_t command(httpd_req_t *req)
     }
     bool sync=!strcmp(req->uri,"/api/time-sync");
     if((sync || time_settings || (wifi_settings && !epaper_network_provisioning())) && !epaper_time_enabled()) {xSemaphoreGive(lock);free(body);return command_error(req,"409 Conflict","Time synchronization is disabled");}
-    strcpy(pending_body,body);memset(body,0,received);free(body);settings_job=settings;rescan_job=!strcmp(req->uri,"/api/rescan");time_job=sync;time_settings_job=time_settings;wifi_job=wifi_settings;wifi_scan_job=!strcmp(req->uri,"/api/wifi-scan");provision_job=!strcmp(req->uri,"/api/wifi-provision");if(wifi_scan_job) {free(wifi_scan_result);wifi_scan_result=NULL;}album_create_job=album_create;album_delete_job=album_delete;pending=true;
+    strcpy(pending_body,body);memset(body,0,received);free(body);settings_job=settings;rescan_job=!strcmp(req->uri,"/api/rescan");time_job=sync;time_settings_job=time_settings;wifi_job=wifi_settings;wifi_scan_job=!strcmp(req->uri,"/api/wifi-scan");provision_job=!strcmp(req->uri,"/api/wifi-provision");if(wifi_scan_job) {free(wifi_scan_result);wifi_scan_result=NULL;}album_create_job=album_create;album_delete_job=album_delete;announcement_job=announcement;announcement_pause_job=announcement_pause;announcement_test_job=announcement_test;pending=true;
     job_id++;job_state="queued";job_error[0]=0;unsigned id=job_id;
     xSemaphoreGive(lock);
     char response[80];snprintf(response,sizeof(response),"{\"job_id\":%u,\"state\":\"queued\"}",id);
@@ -243,6 +274,8 @@ bool epaper_http_process(void)
     xSemaphoreTake(lock,portMAX_DELAY);
     bool reindex=index_pending;
     if(!pending && !reindex) {xSemaphoreGive(lock);epaper_http_sd_unlock();return false;}
+    unsigned budget=(!reindex && (announcement_job||announcement_pause_job||announcement_test_job))?55:250;
+    if(!epaper_announcement_admit(budget)){xSemaphoreGive(lock);epaper_http_sd_unlock();return false;}
     if(reindex) {index_pending=false;index_running=true;}
     else {pending=false;running=true;job_state="running";}
     bool settings=settings_job,force_rescan=rescan_job,sync=time_job,time_settings=time_settings_job,wifi=wifi_job,scan=wifi_scan_job,provision=provision_job,create=album_create_job,remove_album=album_delete_job;
@@ -258,7 +291,10 @@ bool epaper_http_process(void)
         if(portal) epaper_json_read(EPAPER_SD_MOUNT CONFIG_EPAPER_CONFIG_PATH,&rollback);
         else rollback=wifi_rollback_request();
     }
-    esp_err_t err=reindex||force_rescan?epaper_album_rescan():sync?epaper_time_sync():provision?begin_provisioning():scan?scan_wifi_networks():wifi?(rollback?epaper_album_wifi_settings(pending_body,error,sizeof(error)):ESP_ERR_NO_MEM):time_settings?epaper_album_time_settings(pending_body,error,sizeof(error)):settings?epaper_album_settings(pending_body,error,sizeof(error)):(create||remove_album)?epaper_album_manage(pending_body,remove_album,error,sizeof(error)):epaper_album_next();
+    bool photo_job=!reindex && !force_rescan && !announcement_job && !announcement_pause_job && !announcement_test_job && !sync && !provision && !scan && !wifi && !time_settings && !settings && !create && !remove_album;
+    if(photo_job)epaper_profile_phase(PROFILE_PHOTO,true);
+    esp_err_t err=reindex||force_rescan?epaper_album_rescan():announcement_job?epaper_announcement_settings(pending_body,false,error,sizeof(error)):announcement_pause_job?epaper_announcement_settings(pending_body,true,error,sizeof(error)):announcement_test_job?epaper_announcement_test(pending_body,error,sizeof(error)):sync?epaper_time_sync():provision?begin_provisioning():scan?scan_wifi_networks():wifi?(rollback?epaper_album_wifi_settings(pending_body,error,sizeof(error)):ESP_ERR_NO_MEM):time_settings?epaper_album_time_settings(pending_body,error,sizeof(error)):settings?epaper_album_settings(pending_body,error,sizeof(error)):(create||remove_album)?epaper_album_manage(pending_body,remove_album,error,sizeof(error)):epaper_album_next();
+    if(photo_job)epaper_profile_phase(PROFILE_PHOTO,false);
     if(time_settings && !reindex && err==ESP_OK) epaper_time_reconfigure(epaper_album_time_config());
     bool reconnect=wifi && !reindex && err==ESP_OK;
     if(reconnect) {
@@ -288,6 +324,7 @@ bool epaper_http_process(void)
     }
     if(rollback) {memset(rollback,0,strlen(rollback));free(rollback);}
     if(!reindex) memset(pending_body,0,sizeof(pending_body));
+    if(err==ESP_OK && !reindex && !force_rescan && !settings && !sync && !time_settings && !wifi && !scan && !provision && !create && !remove_album && !announcement_job && !announcement_pause_job && !announcement_test_job)next_revision++;
     if(err!=ESP_OK && !error[0]) snprintf(error,sizeof(error),"Command failed: %s",esp_err_to_name(err));
     xSemaphoreTake(lock,portMAX_DELAY);
     if(reindex) {index_running=false;snprintf(index_error,sizeof(index_error),"%s",error);}
@@ -316,7 +353,7 @@ esp_err_t epaper_http_start(void)
     if(!token[0]) for(unsigned i=0;i<4;i++) snprintf(token+i*8,9,"%08lx",(unsigned long)esp_random());
     epaper_http_update(last_usb_host);
     httpd_config_t config=HTTPD_DEFAULT_CONFIG();
-    config.stack_size=8192;config.max_uri_handlers=32;config.max_open_sockets=4;config.lru_purge_enable=true;
+    config.stack_size=8192;config.max_uri_handlers=48;config.max_open_sockets=4;config.lru_purge_enable=true;
     /* A weak WLAN can pause during a large BMP transfer. Keep the overall
        file-transfer deadline, but allow individual socket waits to recover. */
     config.recv_wait_timeout=20;config.send_wait_timeout=20;
@@ -345,6 +382,14 @@ esp_err_t epaper_http_start(void)
     if(err==ESP_OK) err=httpd_register_uri_handler(server,&css);
     if(err==ESP_OK) err=httpd_register_uri_handler(server,&js);
     if(err==ESP_OK) err=httpd_register_uri_handler(server,&status);
+#ifdef CONFIG_EPAPER_DIAGNOSTICS
+    const httpd_uri_t diagnostic_get={.uri="/api/diagnostics",.method=HTTP_GET,.handler=diagnostics};
+    const httpd_uri_t diagnostic_reset={.uri="/api/diagnostics/reset",.method=HTTP_POST,.handler=diagnostics};
+    const httpd_uri_t diagnostic_fault={.uri="/api/diagnostics/network-fault",.method=HTTP_POST,.handler=diagnostics};
+    if(err==ESP_OK)err=httpd_register_uri_handler(server,&diagnostic_get);
+    if(err==ESP_OK)err=httpd_register_uri_handler(server,&diagnostic_reset);
+    if(err==ESP_OK)err=httpd_register_uri_handler(server,&diagnostic_fault);
+#endif
     if(err==ESP_OK) err=httpd_register_uri_handler(server,&next);
     if(err==ESP_OK) err=httpd_register_uri_handler(server,&settings);
     if(err==ESP_OK) err=httpd_register_uri_handler(server,&rescan);
@@ -359,6 +404,13 @@ esp_err_t epaper_http_start(void)
     if(err==ESP_OK) err=httpd_register_uri_handler(server,&album_delete_uri);
     if(err==ESP_OK) err=httpd_register_uri_handler(server,&captive_uri);
     if(err==ESP_OK) err=httpd_register_err_handler(server,HTTPD_404_NOT_FOUND,captive_redirect);
+
+    const httpd_uri_t announcement_uri={.uri="/api/announcement-settings",.method=HTTP_POST,.handler=command},announcement_pause_uri={.uri="/api/announcement-pause-settings",.method=HTTP_POST,.handler=command},announcement_test_uri={.uri="/api/announcement-test",.method=HTTP_POST,.handler=command};
+    if(err==ESP_OK)err=httpd_register_uri_handler(server,&announcement_uri);
+    if(err==ESP_OK)err=httpd_register_uri_handler(server,&announcement_pause_uri);
+    if(err==ESP_OK)err=httpd_register_uri_handler(server,&announcement_test_uri);
+    const httpd_uri_t announcement_asset={.uri="/announcements.js",.method=HTTP_GET,.handler=ui_asset};
+    if(err==ESP_OK)err=httpd_register_uri_handler(server,&announcement_asset);
     if(err==ESP_OK) err=epaper_http_register_files(server);
     if(err!=ESP_OK) {epaper_http_stop();return err;}
     char ip[32];
@@ -373,6 +425,7 @@ void epaper_http_update(bool usb_host)
     cJSON *device=cJSON_AddObjectToObject(root,"device");
     cJSON_AddStringToObject(device,"model","ESP32-S3 PhotoPainter");
     cJSON_AddStringToObject(device,"version",esp_app_get_description()->version);
+    cJSON_AddBoolToObject(device,"deep_wake",esp_reset_reason()==ESP_RST_DEEPSLEEP);
     uint8_t mac[6];char address[32];
     if(esp_read_mac(mac,ESP_MAC_WIFI_STA)==ESP_OK) {
         snprintf(address,sizeof(address),"%02X:%02X:%02X:%02X:%02X:%02X",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
@@ -433,6 +486,7 @@ void epaper_http_update(bool usb_host)
         cJSON_AddNumberToObject(network,"rssi_dbm",ap.rssi);
         cJSON_AddNumberToObject(network,"channel",ap.primary);
     }
+    epaper_announcement_json(root);
     epaper_album_status_t album;epaper_album_status(&album);
     cJSON *a=cJSON_AddObjectToObject(root,"album");
     cJSON_AddBoolToObject(a,"ready",album.ready);cJSON_AddBoolToObject(a,"enabled",album.enabled);
@@ -463,7 +517,7 @@ void epaper_http_update(bool usb_host)
     cJSON_AddNumberToObject(control,"job_id",job_id);
     cJSON_AddStringToObject(control,"state",job_state);
     cJSON_AddStringToObject(control,"error",job_error);
-    cJSON_AddStringToObject(control,"kind",album_create_job?"album-create":album_delete_job?"album-delete":provision_job?"wifi-provision":wifi_scan_job?"wifi-scan":wifi_job?"wifi-settings":time_settings_job?"time-settings":time_job?"time-sync":settings_job?"settings":rescan_job?"rescan":"next");
+    cJSON_AddStringToObject(control,"kind",announcement_job?"announcement-settings":announcement_pause_job?"announcement-pause-settings":announcement_test_job?"announcement-test":album_create_job?"album-create":album_delete_job?"album-delete":provision_job?"wifi-provision":wifi_scan_job?"wifi-scan":wifi_job?"wifi-settings":time_settings_job?"time-settings":time_job?"time-sync":settings_job?"settings":rescan_job?"rescan":"next");
     cJSON_AddBoolToObject(control,"busy",pending||running||files_busy||index_pending||index_running);
     cJSON_AddBoolToObject(control,"files_busy",files_busy);
     cJSON_AddBoolToObject(control,"index_pending",index_pending||index_running||(running&&rescan_job));
@@ -479,6 +533,10 @@ void epaper_http_update(bool usb_host)
     int64_t rtc_sample_us=esp_timer_get_time();
     cJSON_AddBoolToObject(clock,"valid",valid);cJSON_AddBoolToObject(clock,"utc",epaper_time_rtc_utc());
     cJSON_AddStringToObject(clock,"chip","PCF85063");
+    struct timeval system_time;gettimeofday(&system_time,NULL);
+    cJSON_AddNumberToObject(clock,"system_epoch",(double)system_time.tv_sec);
+    int64_t external_epoch=0;
+    if(valid&&epaper_time_rtc_utc()&&epaper_calendar_epoch_utc(&rtc.calendar,&external_epoch)){cJSON_AddNumberToObject(clock,"rtc_epoch",external_epoch);cJSON_AddNumberToObject(clock,"system_rtc_difference_seconds",system_time.tv_sec-external_epoch);}
     if(valid) {
         const epaper_calendar_t *c=&rtc.calendar;char text[40];
         snprintf(text,sizeof(text),"%04d-%02d-%02dT%02d:%02d:%02d%s",c->year,c->month,c->day,c->hour,c->minute,c->second,epaper_time_rtc_utc()?"Z":"");

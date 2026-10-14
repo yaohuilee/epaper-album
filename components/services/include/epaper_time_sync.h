@@ -3,6 +3,7 @@
 #include "esp_err.h"
 esp_err_t epaper_wifi_provision(void);
 void epaper_time_start(const epaper_time_config_t *config,bool deep_wake);
+esp_err_t epaper_time_restore_rtc(void);
 bool epaper_time_due(void);
 uint64_t epaper_time_sleep_us(void);
 esp_err_t epaper_time_sync(void);

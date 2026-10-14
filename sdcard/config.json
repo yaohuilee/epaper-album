@@ -24,14 +24,20 @@
     "include_humidity": true,
     "temperature_decimals": 1,
     "humidity_decimals": 0,
-    "quiet_hours": {
-      "enabled": true,
-      "start": "22:00",
-      "end": "08:00"
-    },
-    "max_lateness_seconds": 60,
+    "max_lateness_seconds": 0,
     "catch_up_missed": false,
-    "audio_root": "/audio/zh-CN"
+    "pause_periods": [
+      {
+        "id": "night",
+        "name": "夜间",
+        "enabled": true,
+        "start": "22:00",
+        "end": "06:00"
+      }
+    ],
+    "engine": "esp-tts",
+    "voice": "xiaole",
+    "speech_speed": 2
   },
   "time": {
     "rtc_storage": "utc",

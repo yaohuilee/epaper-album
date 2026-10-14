@@ -1,10 +1,12 @@
 #include "epaper_board.h"
+#include "epaper_announcement.h"
 #include "epaper_devices.h"
 #include "epaper_storage.h"
 #include "epaper_services.h"
 #include "epaper_runtime.h"
 #include "epaper_time_sync.h"
 #include "epaper_network.h"
+#include "epaper_profile.h"
 #include "epaper_http.h"
 #include "esp_log.h"
 #include "esp_app_desc.h"
@@ -82,6 +84,7 @@ static void web_status(bool awake)
     int64_t now=esp_timer_get_time();
     bool portal=epaper_network_provisioning();
     epaper_time_network_hold(awake || portal);
+    if(epaper_network_fault_active()) return;
     if(portal) {
         static int64_t report_at;
         if(now>=report_at) {
@@ -96,6 +99,7 @@ static void web_status(bool awake)
         epaper_http_stop();epaper_network_stop();retry_at=update_at=0;return;
     }
     if(!epaper_network_online() || !epaper_http_running()) {
+        if(!epaper_announcement_admit(150))return;
         if(now<retry_at) return;
         epaper_http_stop();
         esp_err_t err=epaper_network_start(epaper_album_time_config());
@@ -156,6 +160,8 @@ static void sleep_now(void)
     if(keep_awake() || epaper_network_provisioning()) return; /* Also applies to manual BOOT sleep. */
     epaper_http_stop();epaper_network_stop();
     uint64_t delay=epaper_album_sleep_us();
+    uint64_t announcement_delay=epaper_announcement_sleep_us();
+    if(announcement_delay && (!delay || announcement_delay<delay))delay=announcement_delay;
     uint64_t time_delay=epaper_time_sleep_us();
     if(time_delay && (!delay || time_delay<delay)) delay=time_delay;
     esp_err_t err=esp_sleep_enable_ext1_wakeup_io((1ULL<<BOARD_BOOT)|(1ULL<<BOARD_KEY),ESP_EXT1_WAKEUP_ANY_LOW);
@@ -165,6 +171,7 @@ static void sleep_now(void)
     rtc_gpio_pullup_en(BOARD_KEY);rtc_gpio_pulldown_dis(BOARD_KEY);
     ESP_LOGI(TAG,"Deep sleep; timer=%.1f seconds (0 means buttons only)",delay/1000000.0);
     previous_sleep_valid=epaper_power_read(&previous_sleep_power)==ESP_OK;
+    if(!epaper_announcement_prepare_sleep())return;
     epaper_storage_unmount();epaper_album_prepare_sleep();
     esp_deep_sleep_start();
 }
@@ -180,6 +187,9 @@ void app_main(void)
             previous_sleep_power.current_direction,previous_sleep_power.charge_phase);
     esp_err_t err=epaper_board_init();
     if(err!=ESP_OK) {ESP_LOGE(TAG,"Board init failed: %s",esp_err_to_name(err));return;}
+    if(epaper_environment_initialize()!=ESP_OK)ESP_LOGW(TAG,"Environment measurement lock unavailable");
+    err=epaper_time_restore_rtc();
+    if(err!=ESP_OK)ESP_LOGW(TAG,"RTC bootstrap unavailable: %s",esp_err_to_name(err));
     events=xQueueCreate(4,sizeof(button_event_t));
     if(!events || xTaskCreate(buttons,"buttons",3072,NULL,5,NULL)!=pdPASS) {
         ESP_LOGE(TAG,"Cannot start button capture");return;
@@ -196,25 +206,32 @@ void app_main(void)
         running=err==ESP_OK || err==ESP_ERR_NOT_FOUND;
     }
     if(!running) ESP_LOGE(TAG,"Album startup: %s; awake recovery mode, restart after fixing SD/config",esp_err_to_name(err));
+    epaper_profile_start();
     epaper_time_start(running?epaper_album_time_config():NULL,deep);
+    esp_err_t audio=running?epaper_announcement_start():ESP_ERR_INVALID_STATE;
+    if(audio!=ESP_OK)ESP_LOGW(TAG,"Announcement service: %s",esp_err_to_name(audio));
     bool awake_boot=keep_awake();
     epaper_time_network_hold(true);
     bool attempted=epaper_time_due();
-    if(attempted) epaper_time_sync();
+    if(attempted && epaper_announcement_admit(150)) epaper_time_sync();
     const epaper_time_config_t *network=epaper_album_time_config();
-    if(!epaper_network_online() && (!deep || awake_boot || attempted || !network || !network->enabled)) {
+    if(epaper_announcement_admit(150) && !epaper_network_online() && (!deep || awake_boot || attempted || !network || !network->enabled)) {
         err=epaper_network_start(network);
         if(err!=ESP_OK) {err=provision_start();if(err!=ESP_OK) ESP_LOGE(TAG,"Provisioning failed: %s",esp_err_to_name(err));}
     }
     diagnostics();
+    bool queued_next=false,queued_provision=false;
     int64_t idle_until=esp_timer_get_time()+(int64_t)CONFIG_EPAPER_IDLE_SECONDS*1000000;
     bool manual_sleep=false;
+    unsigned next_revision=epaper_http_next_revision();
     for(;;) {
         bool awake=keep_awake();
         web_status(awake);
         if(epaper_http_process()) idle_until=esp_timer_get_time()+(int64_t)CONFIG_EPAPER_IDLE_SECONDS*1000000;
+        bool http_advanced=next_revision!=epaper_http_next_revision();
+        if(http_advanced){next_revision=epaper_http_next_revision();queued_next=false;}
         if(awake) manual_sleep=false;
-        if(!epaper_network_provisioning() && epaper_time_due()) {
+        if(!epaper_network_provisioning() && !epaper_network_fault_active() && epaper_announcement_admit(150) && epaper_time_due()) {
             err=epaper_time_sync();
             if(err!=ESP_OK && !epaper_network_online() && epaper_network_start(epaper_album_time_config())!=ESP_OK) provision_start();
             idle_until=esp_timer_get_time()+(int64_t)CONFIG_EPAPER_IDLE_SECONDS*1000000;
@@ -228,28 +245,37 @@ void app_main(void)
                 if(awake) ESP_LOGI(TAG,"BOOT sleep ignored while external power or USB host is active, or power status is unknown");
                 else manual_sleep=true;
             }
-            else if(e==BUTTON_NEXT) {if(!epaper_network_provisioning()) next=true;manual_sleep=false;}
+            else if(e==BUTTON_NEXT) {if(!http_advanced && !epaper_network_provisioning()) next=true;manual_sleep=false;}
             else if(e==BUTTON_PROVISION) {
+                if(!epaper_announcement_admit(250)){queued_provision=true;ESP_LOGI(TAG,"Provisioning request queued until announcement completes");continue;}
                 manual_sleep=false;err=provision_start();
                 if(err!=ESP_OK) ESP_LOGW(TAG,"Provisioning: %s",esp_err_to_name(err));
             }
             else if(e==BUTTON_KEY) {
                 manual_sleep=false;diagnostics();
-                ESP_LOGI(TAG,"KEY wake/diagnostics; voice announcement belongs to M2");
+                ESP_LOGI(TAG,"KEY wake/diagnostics");
             } else ESP_LOGI(TAG,"PWR event; long hardware shutdown remains PMIC-controlled");
         }
-        if(epaper_network_provision_finish_due()) {
+        if(epaper_network_provision_finish_due() && epaper_announcement_admit(250)) {
             err=epaper_network_provision_finish();
             if(err==ESP_OK && running) err=epaper_album_restore_current();
             if(err!=ESP_OK) ESP_LOGW(TAG,"Provisioning finish: %s",esp_err_to_name(err));
             idle_until=esp_timer_get_time()+(int64_t)CONFIG_EPAPER_IDLE_SECONDS*1000000;
         }
-        if(running && !epaper_network_provisioning() && (next || (!manual_sleep && epaper_album_due()))) {
+        if(next)queued_next=true;
+        if(queued_provision && epaper_announcement_admit(250)){
+            queued_provision=false;manual_sleep=false;err=provision_start();
+            if(err!=ESP_OK)ESP_LOGW(TAG,"Deferred provisioning: %s",esp_err_to_name(err));
+        }
+        if(running && !epaper_network_provisioning() && epaper_announcement_admit(250) && (queued_next || (!manual_sleep && epaper_album_due()))) {
+            queued_next=false;
+            epaper_profile_phase(PROFILE_PHOTO,true);
             err=epaper_album_next();
+            epaper_profile_phase(PROFILE_PHOTO,false);
             if(err!=ESP_OK) ESP_LOGW(TAG,"Advance: %s",esp_err_to_name(err));
             idle_until=esp_timer_get_time()+(int64_t)CONFIG_EPAPER_IDLE_SECONDS*1000000;
         }
-        if(running && !epaper_network_provisioning() && !awake && released() && (manual_sleep ||
+        if(running && !epaper_network_provisioning() && !queued_next && !queued_provision && !epaper_announcement_busy() && !awake && released() && (manual_sleep ||
            (epaper_album_can_sleep() && esp_timer_get_time()>=idle_until))) sleep_now();
         epaper_http_sd_unlock();
         vTaskDelay(pdMS_TO_TICKS(20));

@@ -7,4 +7,5 @@ typedef struct { float temperature_c; float humidity_percent; } epaper_environme
 esp_err_t epaper_rtc_read(epaper_rtc_t *out);
 esp_err_t epaper_rtc_write(const epaper_calendar_t *utc);
 esp_err_t epaper_environment_read(epaper_environment_t *out);
+esp_err_t epaper_environment_initialize(void);
 esp_err_t epaper_power_read(epaper_power_t *out);

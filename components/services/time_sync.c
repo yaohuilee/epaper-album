@@ -2,6 +2,7 @@
 #include "epaper_runtime.h"
 #include "epaper_devices.h"
 #include "epaper_network.h"
+#include "epaper_profile.h"
 #include "esp_attr.h"
 #include "esp_event.h"
 #include "esp_netif.h"
@@ -11,6 +12,7 @@
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "nvs.h"
+#include "nvs_flash.h"
 #include "freertos/event_groups.h"
 #include <string.h>
 #include <stdio.h>
@@ -28,6 +30,22 @@ void epaper_time_status(epaper_time_status_t *out) {if(out) {*out=status;out->en
 static RTC_DATA_ATTR struct {uint32_t magic,fingerprint;uint64_t next;} schedule;
 static uint64_t wall_us(void)
 {struct timeval t;gettimeofday(&t,NULL);return (uint64_t)t.tv_sec*1000000+(uint64_t)t.tv_usec;}
+esp_err_t epaper_time_restore_rtc(void)
+{
+    esp_err_t err=nvs_flash_init_partition("album_state");
+    if(err!=ESP_OK)return err;
+    nvs_handle_t saved;
+    err=nvs_open_from_partition("album_state","time",NVS_READONLY,&saved);
+    if(err!=ESP_OK)return err;
+    uint8_t marker=0;err=nvs_get_u8(saved,"rtc_utc",&marker);nvs_close(saved);
+    if(err!=ESP_OK||marker!=1)return ESP_ERR_INVALID_STATE;
+    epaper_rtc_t rtc;int64_t epoch=0;
+    if(epaper_rtc_read(&rtc)!=ESP_OK||!rtc.valid||!epaper_calendar_epoch_utc(&rtc.calendar,&epoch))return ESP_ERR_INVALID_RESPONSE;
+    struct timeval restored={.tv_sec=epoch};
+    if(settimeofday(&restored,NULL))return ESP_FAIL;
+    ESP_LOGI(TAG,"System time restored from verified external RTC before album startup");
+    return ESP_OK;
+}
 void epaper_time_start(const epaper_time_config_t *config,bool deep_wake)
 {
     if(config) owned_settings=*config;
@@ -126,7 +144,9 @@ esp_err_t epaper_time_sync(void)
 {
     if(!enabled) return ESP_ERR_INVALID_STATE;
     status.attempted=true;status.last_attempt=utc?(int64_t)time(NULL):0;
+    epaper_profile_phase(PROFILE_NTP,true);
     esp_err_t err=sync_once();
+    epaper_profile_phase(PROFILE_NTP,false);
     status.result=err;
     schedule.next=wall_us()+(uint64_t)(err==ESP_OK?settings->interval:settings->retry)*1000000;
     if(err!=ESP_OK) ESP_LOGW(TAG,"Sync failed: %s; retry in %lu seconds; album continues",esp_err_to_name(err),(unsigned long)settings->retry);

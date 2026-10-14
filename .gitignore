@@ -35,6 +35,8 @@ sdcard/.state/
 *.pyc
 *.elf
 *.map
+*.a
+*.dat
 # Device dumps, legacy firmware and raw probe recordings
 backups/
 legacy-firmware/

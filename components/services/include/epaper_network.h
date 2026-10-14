@@ -5,6 +5,9 @@
 esp_err_t epaper_network_start(const epaper_time_config_t *settings);
 void epaper_network_stop(void);
 bool epaper_network_online(void);
+bool epaper_network_fault_active(void);
+void epaper_network_fault_tick(void);
+esp_err_t epaper_network_fault_start(void);
 bool epaper_network_ip(char *out,size_t size);
 /* Open AP survives station connection attempts; app owns provisioning lifecycle. */
 esp_err_t epaper_network_provision_start(void);

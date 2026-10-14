@@ -5,6 +5,13 @@
 int main(void)
 {
     epaper_calendar_t c;
+    int64_t epoch=0;
+    epaper_calendar_t utc={.year=2026,.month=10,.day=14,.weekday=3,.hour=12,.minute=46,.second=0};
+    assert(epaper_calendar_epoch_utc(&utc,&epoch)&&epoch==1791981960);
+    utc.year=2000;utc.month=2;utc.day=29;utc.hour=utc.minute=utc.second=0;
+    assert(epaper_calendar_epoch_utc(&utc,&epoch)&&epoch==951782400);
+    utc.year=2001;assert(!epaper_calendar_epoch_utc(&utc,&epoch));
+    utc.year=2000;utc.oscillator_stopped=true;assert(!epaper_calendar_epoch_utc(&utc,&epoch));
     uint8_t raw[] = {0x32,0x03,0x21,0x09,0x05,0x10,0x26};
     assert(epaper_calendar_decode(raw, &c));
     assert(c.year == 2026 && c.month == 10 && c.day == 9 && c.hour == 21);

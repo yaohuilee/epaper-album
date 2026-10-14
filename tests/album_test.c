@@ -100,7 +100,7 @@ static void config_tests(void)
         "{\"schema_version\":1,\"playback\":{},\"albums\":[{\"id\":\"a\",\"directory\":\"a\\u0000/../x\"}]}"
     };
     for(unsigned i=0;i<sizeof(bad)/sizeof(bad[0]);i++) CHECK(!epaper_album_parse(global,bad[i],c,error,sizeof(error)));
-    CHECK(!epaper_album_parse("{\"schema_version\":1,\"album\":{\"root\":\"/albums\",\"manifest\":\"albums.json\"},\"announcement\":{\"enabled\":true}}",manifest,c,error,sizeof(error)));
+    CHECK(epaper_album_parse("{\"schema_version\":1,\"album\":{\"root\":\"/albums\",\"manifest\":\"albums.json\"},\"announcement\":{\"enabled\":true}}",manifest,c,error,sizeof(error)));
     CHECK(!epaper_album_parse("{\"schema_version\":1,\"album\":{\"root\":\"/albums\",\"manifest\":\"albums.json\"},\"power\":{\"low_battery_policy\":\"suspend_refresh_and_auto_audio\"}}",manifest,c,error,sizeof(error)));
     char deep[256]="{\"schema_version\":1,\"x\":";for(unsigned i=0;i<40;i++) strcat(deep,"[");
     strcat(deep,"0");for(unsigned i=0;i<40;i++) strcat(deep,"]");strcat(deep,"}");

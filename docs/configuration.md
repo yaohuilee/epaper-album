@@ -2,7 +2,7 @@
 
 [文档首页](README.md) · [项目首页](../README.md)
 
-相册、Wi-Fi和校时设置已实现；语音播报、声音活动和低电量自动策略为预留规格，不能启用。当前支持范围见[项目首页](../README.md)，计划见[后续计划](roadmap.md)。
+相册、Wi-Fi、校时和离线报时已实现；声音活动和低电量自动策略为预留规格，不能启用。当前支持范围见[项目首页](../README.md)，计划见[后续计划](roadmap.md)。
 
 两份文件职责互不重叠：SD 根目录 `/config.json` 保存设备全局设置；相册根目录 `/albums/albums.json` 保存相册名单和播放设置。相册根目录可由全局配置修改。运行状态保存于NVS，不写回用户配置。网页设置操作会分别更新对应的SD配置文件。
 
@@ -81,11 +81,11 @@ BOOT 短按按当前播放策略推进到下一张；手动换图成功后，从
 
 ### 预留字段
 
-`announcement.enabled` 和 `activity.enabled` 必须保持false，开启会拒绝配置。播报分钟、音量、静音时间、温湿度播报及声音检测参数为后续设计，当前不执行。
+`activity.enabled` 必须保持false。报时采用ESP-TTS小乐，engine=esp-tts、voice=xiaole、speech_speed=2固定。支持minutes的0/30、volume_percent、include_temperature/include_humidity、temperature_decimals的0/1和最多8段pause_periods。旧voice_pack、audio_root和quiet_hours在启动时原子迁移；不补播。详见[报时说明](announcement.md)。
 
 `device` 元数据和 `sensor` 校准偏移也为预留字段。设备显示时间固定为UTC+8，不通过 `device.timezone` 切换任意时区；温湿度读数未应用配置偏移。
 
-报时默认值和静音方案见[待实现设计](design/announcement-and-activity.md)。模板中的字段不等于功能已经支持。
+报时默认关闭，音量40%，暂停22:00–06:00。网页分别保存报时设置和暂停时段，保留无关的全局字段。
 
 ## 配置安全与错误回退
 

@@ -104,3 +104,9 @@ SSID为1–32字节，区分大小写，设备使用2.4 GHz网络。密码省略
 内部SRAM硬件容量512 KiB，RTC SRAM16 KiB；硬件容量不等于可用堆。内部堆/PSRAM分别提供总量、剩余、低水位和最大连续块。剩余之和不保证能分配同样大小的连续内存。充电阶段不等于实测电流或电量百分比。
 
 历次接口/页面变更的完整记录见[HTTP历史说明](history/http-status-changes.md)。
+
+## 声音与报时
+
+报时与试听统一使用ESP-TTS小乐；POST /api/announcement-settings、/api/announcement-pause-settings分别保存设置，/api/announcement-test接受kind=hour/half及volume_percent。省略engine即可使用小乐，显式指定时只接受esp-tts。实际完成由completed_test_id及last_test_result确认，不以控制job入队成功代替播报完成。详见[报时说明](announcement.md)。
+
+录音包上传、下载和激活接口已移除。CONFIG_EPAPER_DIAGNOSTICS启用时提供带控制令牌的/api/diagnostics统计入口；常规构建默认关闭。限时网络故障仅允许USB主机连接时注入，测量字段和限制见[性能压力测试](performance-stress.md)。

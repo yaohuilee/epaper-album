@@ -31,6 +31,7 @@ python C:/Espressif/esp-idf-v5.5.3/tools/idf_tools.py install-python-env
 
 ```powershell
 . ./tools/Enter-Idf.ps1
+./tools/Install-EspTts.ps1
 ./tools/Build.ps1
 ```
 
@@ -46,6 +47,13 @@ python C:/Espressif/esp-idf-v5.5.3/tools/idf_tools.py install-python-env
 - `album_test.c`：BMP 旋转与非法文件、配置、索引、两种策略、随机不重复与重启恢复。
 - `runtime_test.c`：生产 runtime 代码配合模拟时钟/显示/NVS，验证间隔从完成时开始、手动计时、失败不提交、深睡/冷启动、中断刷新恢复和配置缓存。
 - `provision_test.c`：配网画面边界、颜色与非法输入。
+- `announcement_test.c`：报时边界、旧配置迁移、分配失败、短句合成失败清理及滴声/静默时序。
+- `pcm_resample_test.c`：16 kHz到24 kHz插值、边界、极值和容量检查。
+- `announcements_ui_test.cjs`：实际页面脚本的试听入队与完成结果；安装Node.js后由Test.ps1执行。
+
+语音引擎为ESP-TTS小乐，默认启用。安装器下载固定版本SDK库与音库到.local，构建和烧录将小乐音库写入voice_data分区（0x600000，4 MiB）；无需SD录音包。来源与许可见[ESP-TTS构建](esp-tts.md)。
+
+CONFIG_EPAPER_DIAGNOSTICS默认关闭。启用后可测量任务CPU和堆低水位，并在USB主机连接时进行限时网络故障注入；复测工具、实测数据和限制见[性能压力测试](performance-stress.md)。
 
 测试生成物和模拟 SD 位于 `.local/`，不接触真实 SD。正式固件通过 `./tools/Build.ps1` 编译，脚本不自动烧录。
 

@@ -20,7 +20,7 @@ if (-not (Test-Path -LiteralPath $VsDevCmd)) { throw 'VsDevCmd.bat not found.' }
 $localDir = Join-Path $projectRoot '.local'
 New-Item -ItemType Directory -Force -Path $localDir | Out-Null
 $runner = Join-Path $localDir 'run-tests.cmd'
-$common = '/nologo /W4 /WX /std:c11 /D_CRT_SECURE_NO_WARNINGS /I components/core/include'
+$common = '/nologo /W4 /WX /utf-8 /std:c11 /D_CRT_SECURE_NO_WARNINGS /I components/core/include'
 $album = "/I components/album/include /I`"$cjson`" components/core/bmp.c components/album/config.c components/album/config_io.c components/album/catalog.c components/album/player.c components/album/files.c `"$cjson/cJSON.c`""
 $commands = @(
     '@echo off',
@@ -33,11 +33,21 @@ $commands = @(
     "cl $common /I tests/mocks /I components/services/include $album tests/runtime_test.c /Fe:.local/runtime_test.exe /Fo:.local/",
     'if errorlevel 1 exit /b 1', '.local\runtime_test.exe', 'if errorlevel 1 exit /b 1',
     "cl $common /I components/services tests/provision_test.c components/services/provision_render.c components/services/qrcodegen.c /Fe:.local/provision_test.exe /Fo:.local/",
-    'if errorlevel 1 exit /b 1', '.local\provision_test.exe', 'exit /b %errorlevel%'
+    'if errorlevel 1 exit /b 1', '.local\provision_test.exe', 'if errorlevel 1 exit /b 1',
+    "cl $common /I`"$cjson`" tests/announcement_test.c components/core/announcement_core.c components/core/audio_sequence.c `"$cjson/cJSON.c`" /Fe:.local/announcement_test.exe /Fo:.local/",
+    'if errorlevel 1 exit /b 1', '.local\announcement_test.exe', 'if errorlevel 1 exit /b 1',
+    "cl $common tests/pcm_resample_test.c components/core/pcm_resample.c /Fe:.local/pcm_resample_test.exe /Fo:.local/",
+    'if errorlevel 1 exit /b 1', '.local\pcm_resample_test.exe', 'exit /b %errorlevel%'
 )
 Set-Content -LiteralPath $runner -Value $commands -Encoding ascii
 Push-Location -LiteralPath $projectRoot
 try {
     & $env:ComSpec /d /c "`"$runner`""
     if ($LASTEXITCODE -ne 0) { throw 'Host tests failed.' }
+    if (Get-Command node -ErrorAction SilentlyContinue) {
+        node tests/announcements_ui_test.cjs
+        if ($LASTEXITCODE -ne 0) { throw 'Announcement UI tests failed.' }
+    } else {
+        Write-Warning 'Node.js unavailable; announcement UI tests skipped. Run node tests/announcements_ui_test.cjs after installing Node.js.'
+    }
 } finally { Pop-Location }

@@ -68,3 +68,14 @@ bool epaper_calendar_encode(const epaper_calendar_t *c,uint8_t raw[7])
     for(unsigned i=0;i<7;i++) raw[i]=encoded[i];
     return true;
 }
+bool epaper_calendar_epoch_utc(const epaper_calendar_t *c,int64_t *epoch)
+{
+    uint8_t raw[7];
+    if(!epoch||!epaper_calendar_encode(c,raw))return false;
+    int64_t days=10957;
+    for(int year=2000;year<c->year;year++)days+=year%4==0?366:365;
+    static const unsigned lengths[]={31,28,31,30,31,30,31,31,30,31,30,31};
+    for(int month=1;month<c->month;month++)days+=lengths[month-1]+(month==2&&c->year%4==0);
+    *epoch=(days+c->day-1)*86400+c->hour*3600+c->minute*60+c->second;
+    return true;
+}

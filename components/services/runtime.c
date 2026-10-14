@@ -450,3 +450,23 @@ esp_err_t epaper_album_wifi_restore_root(const char *json)
     }
     free(manifest);free(config);return err;
 }
+
+bool epaper_album_root_json(char **output)
+{
+    *output=NULL;
+    if(epaper_json_read(EPAPER_SD_MOUNT CONFIG_EPAPER_CONFIG_PATH,output))return true;
+    char *manifest=NULL;bool ok=initialized && cache_load(output,&manifest);free(manifest);return ok;
+}
+esp_err_t epaper_album_save_root_json(const char *json,char *error,size_t size)
+{
+    if(!initialized)return ESP_ERR_INVALID_STATE;
+    char path[EPAPER_PATH_MAX],*manifest=NULL;epaper_album_config_t *c=malloc(sizeof(*c));
+    if(!c)return ESP_ERR_NO_MEM;
+    int n=snprintf(path,sizeof(path),"%s%s%s%s",EPAPER_SD_MOUNT,catalog->config.root,!strcmp(catalog->config.root,"/")?"":"/",catalog->config.manifest);
+    esp_err_t err=ESP_FAIL;
+    if(n<=0 || (size_t)n>=sizeof(path) || !epaper_json_read(path,&manifest))goto end;
+    if(!epaper_album_parse(json,manifest,c,error,size) || memcmp(c,&catalog->config,sizeof(*c))){snprintf(error,size,"Unrelated SD configuration changed; restart first");goto end;}
+    if(!epaper_json_replace(EPAPER_SD_MOUNT CONFIG_EPAPER_CONFIG_PATH,json)){snprintf(error,size,"Cannot save announcement settings");goto end;}
+    cache_save(json,manifest);err=ESP_OK;
+end:free(c);free(manifest);return err;
+}

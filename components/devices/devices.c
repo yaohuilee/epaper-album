@@ -2,6 +2,15 @@
 #include "epaper_board.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
+
+static SemaphoreHandle_t environment_lock;
+esp_err_t epaper_environment_initialize(void)
+{
+    if(environment_lock)return ESP_OK;
+    environment_lock=xSemaphoreCreateMutex();
+    return environment_lock?ESP_OK:ESP_ERR_NO_MEM;
+}
 
 esp_err_t epaper_power_read(epaper_power_t *out)
 {
@@ -48,8 +57,8 @@ esp_err_t epaper_rtc_write(const epaper_calendar_t *utc)
     return err==ESP_OK?restart:err;
 }
 
-/* One application task owns the wake/measure/read/sleep sequence. */
-esp_err_t epaper_environment_read(epaper_environment_t *out)
+/* Protect the entire SHTC3 measurement, not only individual I2C transactions. */
+static esp_err_t measure_environment(epaper_environment_t *out)
 {
     if (!out) return ESP_ERR_INVALID_ARG;
     *out = (epaper_environment_t){0};
@@ -72,4 +81,13 @@ esp_err_t epaper_environment_read(epaper_environment_t *out)
     out->temperature_c = -45.0f + 175.0f * temperature / 65536.0f;
     out->humidity_percent = 100.0f * humidity / 65536.0f;
     return ESP_OK;
+}
+
+esp_err_t epaper_environment_read(epaper_environment_t *out)
+{
+    if(!environment_lock)return ESP_ERR_INVALID_STATE;
+    if(xSemaphoreTake(environment_lock,pdMS_TO_TICKS(500))!=pdTRUE)return ESP_ERR_TIMEOUT;
+    esp_err_t err=measure_environment(out);
+    xSemaphoreGive(environment_lock);
+    return err;
 }
