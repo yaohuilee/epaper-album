@@ -17,7 +17,7 @@ if (-not $ToolsPath) { $ToolsPath = $env:IDF_TOOLS_PATH }
 if (-not $IdfPath -or -not (Test-Path -LiteralPath (Join-Path $IdfPath 'export.ps1'))) {
     throw 'Provide -IdfPath or create .local/idf-env.json; see docs/development.md.'
 }
-if ($PythonDirectory) { $env:Path = "$PythonDirectory;$env:Path" }
+if ($PythonDirectory -and -not $env:IDF_PYTHON_ENV_PATH) { $env:Path = "$PythonDirectory;$env:Path" }
 if ($ToolsPath) { $env:IDF_TOOLS_PATH = (Resolve-Path -LiteralPath $ToolsPath).Path }
 $env:IDF_PATH = (Resolve-Path -LiteralPath $IdfPath).Path
 . (Join-Path $env:IDF_PATH 'export.ps1')

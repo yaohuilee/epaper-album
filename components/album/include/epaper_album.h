@@ -87,3 +87,8 @@ bool epaper_player_restore(epaper_catalog_t *catalog,epaper_player_t *player,con
 bool epaper_player_pick(epaper_catalog_t *catalog,epaper_player_t *trial,unsigned *album,unsigned *photo);
 void epaper_player_commit(epaper_catalog_t *catalog,epaper_player_t *trial,unsigned album,unsigned photo,uint32_t hash);
 bool epaper_player_valid(const epaper_catalog_t *catalog,const epaper_player_t *player);
+
+bool epaper_album_directory_valid(const char *name);
+bool epaper_album_rename_edit(const char *global,const char *manifest,const char *request,
+    char **output,epaper_album_config_t *config,char *old_directory,char *new_directory,size_t directory_size,
+    char *error,size_t error_size);

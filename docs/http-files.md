@@ -4,7 +4,7 @@
 
 ## 网页照片管理
 
-在侧栏点击“照片库”，或访问 `/albums`。页面使用本文件描述的 API，所有资源内置固件，无需外部 CDN。相册以文件夹方式显示，点击打开后在同页浏览和上传照片，支持每页50张、筛选本页文件名、预览原始BMP、下载、逐张删除及多文件选择/拖放上传。选择相册仅改变管理目录，不改变轮播选择；停用相册会标注“未参与轮播”，播放选择和间隔在“播放设置”中调整。
+在侧栏点击“照片库”，或访问 `/albums`。页面使用本文件描述的 API，所有资源内置固件，无需外部 CDN。相册以文件夹方式显示，提供新建、重命名和删除入口，点击打开后在同页浏览和上传照片，支持每页50张、筛选本页文件名、预览原始BMP、下载、逐张删除及多文件选择/拖放上传。选择相册仅改变管理目录，不改变轮播选择；停用相册会标注“未参与轮播”，播放选择和间隔在“播放设置”中调整。
 
 上传显示单张进度，依次传输且每张等待索引完成后继续。文件需预先处理，网页不做图片量化或尺寸转换；本地先检查基本BMP头部，固件完成尺寸和六色像素验证。遇到同名、非法BMP、忙碌或网络故障时停止本批，显示已完成数量，保留未完成选择；响应未确认时需刷新核对已写入文件，避免盲目重复上传。删除需确认，只移除所选文件；当前照片删除引起刷屏时等待约30秒。预览按需加载单张，列表不自动下载全部BMP。
 
@@ -27,7 +27,7 @@
 
 `album` 与 `name` 使用UTF-8 URL编码，只解码一次。拒绝重复/未知参数、NUL、路径分隔符、`..`、隐藏文件名、非BMP名称及FAT保留字符。不能以照片参数访问配置文件或目录。列表默认50项，每页1–100项，offset为0–2048；没有下一页时 `next_offset` 为null。每个相册最多列出2048个BMP；目录/非BMP/临时上传文件不出现在列表中。列表包含尺寸/头部不合格的现有BMP，并用 `header_valid` 标注，便于下载处理或删除；该字段不代表已检查每个像素的调色板。
 
-上传必须带 `Content-Length`，`Content-Type` 为 `image/bmp` 或 `application/octet-stream`，内容直接是BMP字节，不能使用 multipart/form-data。单文件上限2MiB；默认横向800×480，24位无压缩、正高度BMP，六色像素规则见 [图片格式](image-format.md)。旋转90/270度时要求480×800。固件不会把JPEG或普通照片自动转成六色BMP。同名（含FAT大小写等价名称）返回409，保留原文件；需要替换时由客户端显式删除旧照片再上传新文件。
+`PUT /api/photo` 原样上传必须带 `Content-Length`，`Content-Type` 为 `image/bmp` 或 `application/octet-stream`，内容直接是BMP字节，不能使用 multipart/form-data。单文件上限2MiB；默认横向800×480，24位无压缩、正高度BMP，六色像素规则见 [图片格式](image-format.md)。旋转90/270度时要求480×800。原样上传接口不执行转换。同名（含FAT大小写等价名称）返回409，保留原文件；需要替换时由客户端显式删除旧照片再上传新文件。
 
 使用8KiB缓冲流式写入同目录 `.epaper-upload.tmp`，收齐、flush/fsync并关闭后，重新读入并检查BMP头部及所有六色像素，验证成功才改名成正式照片。上传中断、超时、非法图或写入失败会丢弃临时文件。意外断电留下的隐藏临时文件不会播放，下次上传可以重用。整个网络传输预算约60秒，单次socket收发超时5秒；尚未提供分段续传或Range下载。
 
@@ -37,7 +37,29 @@
 
 SD传输、配置写入、图片解码和显示通过共享锁互斥，禁止访问已卸载SD。电脑和普通USB外部供电保持在线，电池供电按计划深睡；睡眠时API不可访问；已开始的传输会先退出再停止服务和卸载SD。没有上板验证上传期间真实断电、SD满盘/掉卡等故障下FAT目录更新的可靠性。
 
-## Windows 命令行工具
+## 原图自动转换（0.17.0）
+
+`PUT /api/upload?album=ID&name=原图.jpg`：带控制令牌和 `Content-Length`，直接发送 JPEG 或24位 BI_RGB BMP 字节，不使用 multipart。接受54字节至16 MiB，边长不超过12000像素、总像素不超过4000万。JPEG支持基线彩色/灰度及 EXIF 方向，拒绝渐进式、CMYK、损坏文件。BMP支持正/负高度。尺寸、裁剪及六色约定见[照片格式](image-format.md)。
+
+原图收齐后返回202及 `job_id/name/state`，后台转换、校验、发布并索引。输出同名主体的 `.bmp`，不能覆盖现有文件。网络接收预算100秒，socket 超时20秒；没有断点续传。上传接收时 HTTP 服务一次处理一个请求，其他请求可能等待。客户端遇到不确定的网络超时，先查询任务和文件列表，不能直接重复上传。
+
+`GET /api/upload`：带同一令牌，读取本次启动最近任务的实时状态；不依赖5秒状态缓存。`can_upload` 表示当前可以开始接收；客户端应先等待此字段为true，再发送大文件。此值是瞬时预检查，正式上传仍可能返回409。一次仅允许一个转换任务。文件夹新建、重命名、删除及原样上传在转换期间返回409。
+
+| 字段 | 内容 |
+|---|---|
+| `job_id/album/source_name/name` | 任务编号、相册、来源名、最终 BMP 名 |
+| `active/published/state/error` | 是否运行、是否已发布、阶段及错误 |
+| `progress_percent` | 转换任务阶段进度0–100；收图阶段由页面显示传输字节进度 |
+| `elapsed_ms/conversion_ms/paused_ms` | 包含接收的总耗时、接收后的耗时、已结束的暂停累计耗时 |
+| `decode_resize_ms/dither_ms/write_ms/validate_ms` | 各阶段耗时，包含该阶段等待 |
+| `source_width/source_height/width/height` | 来源与输出尺寸 |
+| `workspace_bytes` | 主要转换缓冲区的分配上界，不是整机堆使用量 |
+
+阶段为 `receiving/queued/decoding/resizing/dithering/writing/validating/publishing/indexing/waiting/succeeded/failed`。`waiting` 表示等待报时、显示或其他设备任务，完成后恢复原阶段。`succeeded` 表示正式 BMP 和索引均完成；失败但 `published=true` 时文件已经保存，应检查索引并重新扫描。根状态接口 `image_import` 提供相同任务字段的缓存快照。
+
+临时文件为目标目录内 `.epaper-import-source.tmp` 和 `.epaper-import-output.tmp`。完整校验后原子改名，失败不会发布部分 BMP。任务结束清理临时数据，开机清理配置相册中这两个保留文件。转换期间保持唤醒；完成后恢复原电池休眠计划。转换低优先级运行并在 SD 操作之间让出资源，自动轮播和报时继续按原调度执行。
+
+## Windows 命令行工具（原样 BMP）
 
 `tools/sd_photo_api.py` 仅使用Python标准库，自动读取令牌，上传/删除后等待索引完成。下载要求新的本地目标文件，避免覆盖原图片。示例：
 
@@ -72,11 +94,15 @@ curl.exe -X POST -H "X-Album-Token: TOKEN" -H "Content-Type: application/json" -
 
 `GET /setup` 返回独立配网页面。`POST /api/wifi-provision` 使用控制令牌和空对象 `{}` 异步启动配网。`GET /api/captive-portal` 返回 `application/captive+json` 的 captive 和 user-portal-url 字段。`network.provisioning` 表示配网模式，`ap_ssid` / `ap_ip` 为开放热点信息。扫描和 Wi-Fi 保存 API 在 AP+STA 模式可用，其他控制命令及照片文件操作返回409。首次配网可启用此前关闭的 Wi-Fi / NTP。连接失败恢复原 SD 根配置，成功后热点保留30秒再关闭。详见 [离线配网](wifi-provisioning.md)。
 
-## 相册新建与删除（0.14.35）
+## 相册文件夹维护（0.16.3）
 
-`POST /api/album-create`：请求 `{ "schema_version": 1, "id": "world-asia", "enabled": false, "interval_seconds": 900 }`，在相册根目录新建与 ID 同名的目录，并保存到相册清单。ID 为1–63位英文字母、数字、下划线或连字符，不允许 Windows 保留目录名称。同名目录不复用。默认停用，间隔120–604800秒。
+`POST /api/album-create`：请求 `{ "schema_version": 1, "id": "world-asia", "enabled": false, "interval_seconds": 900 }`，在相册根目录新建与 ID 同名的目录，并保存到相册清单。ID 为1–63位英文字母、数字、下划线或连字符，不允许 Windows 保留目录名称。同名目录不复用。默认停用，间隔120–604800秒。0.16.3 起可添加可选 `directory` 字段指定显示和存储的文件夹名称；省略时沿用 ID。文件夹名称支持 UTF-8 中文，1–120字节，不允许路径分隔符、控制/保留字符、连续句点、首尾空格/末尾句点或 Windows 保留名称。
 
-`POST /api/album-delete`：请求 `{ "schema_version": 1, "id": "world-asia" }`，删除空目录及对应清单记录。先用照片 API 删除照片。非空目录（包括隐藏或非BMP文件）会拒绝删除，防止误删未列出的内容；不支持递归删除。共享目录和嵌套目录拒绝删除。删除最后一个相册后允许清单为空，停止轮播并保留屏幕当前像素。
+`POST /api/album-rename`：请求 `{ "schema_version": 1, "id": "world-asia", "directory": "亚洲风景" }`。仅修改真实目录和清单中的 directory，ID 保持不变，照片不重新编码，保留启用状态、停留时间及当前播放照片的截止时间；当前照片路径同步更新，无需重新刷屏。目标目录不能已存在，不能只更改大小写；共享或嵌套的配置目录拒绝操作。
+
+重命名前写入 `<manifest>.rename-pending` 恢复记录。目录改名、扫描和清单保存失败时回滚；开机按已保存清单恢复中断的改名。恢复发生冲突时保留目录和记录并停止启动，供人工修复。此记录及 `.tmp` 文件名属于内部保留用途。
+
+`POST /api/album-delete`：请求 `{ "schema_version": 1, "id": "world-asia" }`，删除空目录及对应清单记录。先用照片 API 删除照片。非空目录（包括隐藏或非BMP文件）会拒绝删除，防止误删未列出的内容；不支持递归删除。网页删除非空相册时，先确认照片数量及勾选永久删除，再通过照片 API 逐张删除和更新索引，最后调用相册删除；中断或遇到其他文件时会保留相册，并报告已删除数量。共享目录和嵌套目录拒绝删除。删除最后一个相册后允许清单为空，停止轮播并保留屏幕当前像素。
 
 两者带 `X-Album-Token`、`Content-Type: application/json`，返回202和job_id，轮询 `/api/status` 的 control 记录确认成功。配置写入采用既有临时文件/备份恢复流程，目录操作失败不修改清单，清单写入失败尝试回滚目录。配网、刷屏及其他SD操作期间保持互斥。
 

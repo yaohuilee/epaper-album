@@ -8,6 +8,7 @@
 #include "epaper_network.h"
 #include "epaper_profile.h"
 #include "epaper_http.h"
+#include "epaper_image_import.h"
 #include "esp_log.h"
 #include "esp_app_desc.h"
 #include "esp_psram.h"
@@ -204,6 +205,7 @@ void app_main(void)
         if(provision!=ESP_OK) ESP_LOGW(TAG,"Wi-Fi provisioning failed: %s",esp_err_to_name(provision));
         err=epaper_album_start(deep);
         running=err==ESP_OK || err==ESP_ERR_NOT_FOUND;
+        if(running)epaper_image_cleanup();
     }
     if(!running) ESP_LOGE(TAG,"Album startup: %s; awake recovery mode, restart after fixing SD/config",esp_err_to_name(err));
     epaper_profile_start();
@@ -289,7 +291,7 @@ void app_main(void)
             if(err!=ESP_OK) ESP_LOGW(TAG,"Advance: %s",esp_err_to_name(err));
             idle_until=esp_timer_get_time()+(int64_t)CONFIG_EPAPER_IDLE_SECONDS*1000000;
         }
-        if(running && !epaper_network_provisioning() && !queued_next && !queued_provision && !epaper_announcement_busy() && !awake && released() && (manual_sleep ||
+        if(running && !epaper_network_provisioning() && !queued_next && !queued_provision && !epaper_announcement_busy() && !epaper_image_active() && !awake && released() && (manual_sleep ||
            (epaper_album_can_sleep() && esp_timer_get_time()>=idle_until))) sleep_now();
         epaper_http_sd_unlock();
         vTaskDelay(pdMS_TO_TICKS(20));

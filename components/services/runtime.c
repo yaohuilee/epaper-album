@@ -15,10 +15,13 @@
 #include <errno.h>
 #ifdef _WIN32
 #include <direct.h>
+#include <io.h>
+#define journal_sync(f) _commit(_fileno(f))
 #define make_directory(path) _mkdir(path)
 #define remove_directory(path) _rmdir(path)
 #else
 #include <unistd.h>
+#define journal_sync(f) fsync(fileno(f))
 #define make_directory(path) mkdir(path,0775)
 #define remove_directory(path) rmdir(path)
 #endif
@@ -84,6 +87,50 @@ static void cache_save(const char *global,const char *manifest)
     }
     free(data);
 }
+static bool album_directory_path(const char *root,const char *directory,char *path,size_t size)
+{
+    int n=snprintf(path,size,"%s%s%s%s",EPAPER_SD_MOUNT,root,!strcmp(root,"/")?"":"/",directory);
+    return n>0 && (size_t)n<size;
+}
+static bool rename_recover(const epaper_album_config_t *config,const char *manifest_path)
+{
+    char journal[EPAPER_PATH_MAX+32],old_path[EPAPER_PATH_MAX],new_path[EPAPER_PATH_MAX],*text=NULL;
+    snprintf(journal,sizeof(journal),"%s.rename-pending",manifest_path);
+    struct stat st;if(stat(journal,&st))return errno==ENOENT;
+    if(!epaper_json_read(journal,&text))return false;
+    cJSON *doc=cJSON_Parse(text);free(text);bool ok=false;
+    const cJSON *id=cJSON_GetObjectItemCaseSensitive(doc,"id"),*old=cJSON_GetObjectItemCaseSensitive(doc,"old"),*next=cJSON_GetObjectItemCaseSensitive(doc,"new");
+    if(!cJSON_IsString(id) || !cJSON_IsString(old) || !cJSON_IsString(next) ||
+       !epaper_album_directory_valid(old->valuestring) || !epaper_album_directory_valid(next->valuestring) ||
+       !album_directory_path(config->root,old->valuestring,old_path,sizeof(old_path)) ||
+       !album_directory_path(config->root,next->valuestring,new_path,sizeof(new_path)))goto end;
+    const char *chosen=NULL;
+    for(unsigned i=0;i<config->album_count;i++)if(!strcmp(config->albums[i].id,id->valuestring))chosen=config->albums[i].directory;
+    if(!chosen || (strcmp(chosen,old->valuestring) && strcmp(chosen,next->valuestring)))goto end;
+    bool have_old=stat(old_path,&st)==0;if(!have_old && errno!=ENOENT)goto end;if(have_old && (st.st_mode&S_IFMT)!=S_IFDIR)goto end;
+    bool have_new=stat(new_path,&st)==0;if(!have_new && errno!=ENOENT)goto end;if(have_new && (st.st_mode&S_IFMT)!=S_IFDIR)goto end;
+    if(have_old==have_new)goto end;
+    bool old_selected=!strcmp(chosen,old->valuestring);
+    if(old_selected!=have_old && rename(have_old?old_path:new_path,old_selected?old_path:new_path))goto end;
+    ok=remove(journal)==0;
+    if(ok)ESP_LOGI(TAG,"Recovered pending album directory rename");
+end:cJSON_Delete(doc);return ok;
+}
+static bool rename_journal_write(const char *path,const char *id,const char *old,const char *next)
+{
+    cJSON *doc=cJSON_CreateObject();if(!doc)return false;
+    bool ok=cJSON_AddStringToObject(doc,"id",id) && cJSON_AddStringToObject(doc,"old",old) && cJSON_AddStringToObject(doc,"new",next);
+    char *text=ok?cJSON_PrintUnformatted(doc):NULL;cJSON_Delete(doc);if(!text)return false;
+    char tmp[EPAPER_PATH_MAX+40];snprintf(tmp,sizeof(tmp),"%s.tmp",path);
+    FILE *f=fopen(tmp,"wb");if(!f){free(text);return false;}
+    size_t n=strlen(text);ok=fwrite(text,1,n,f)==n;free(text);
+    if(fflush(f) || journal_sync(f))ok=false;
+    if(fclose(f))ok=false;
+    if(ok)ok=rename(tmp,path)==0;
+    if(!ok)remove(tmp);
+    return ok;
+}
+
 static bool load_config(epaper_album_config_t *config)
 {
     char *global=NULL,*manifest=NULL,error[160]={0},root[256],name[128],path[EPAPER_PATH_MAX];
@@ -94,6 +141,10 @@ static bool load_config(epaper_album_config_t *config)
         n=snprintf(path,sizeof(path),"%s%s%s%s",EPAPER_SD_MOUNT,root,!strcmp(root,"/")?"":"/",name);
         if(n>0 && (size_t)n<sizeof(path) && epaper_json_recover(path) && epaper_json_read(path,&manifest))
             ok=epaper_album_parse(global,manifest,config,error,sizeof(error));
+    }
+    if(ok && !rename_recover(config,path)) {
+        ESP_LOGE(TAG,"Pending album rename recovery failed; preserve SD files for repair");
+        free(global);free(manifest);return false;
     }
     if(ok) {if(error[0]) ESP_LOGW(TAG,"%s",error);cache_save(global,manifest);}
     else {
@@ -362,6 +413,53 @@ end:
     free(global);free(manifest);free(output);free(config);
     epaper_catalog_free(replacement);free(replacement);
     if(err!=ESP_OK && error && size && !error[0]) snprintf(error,size,"Settings not applied: %s",esp_err_to_name(err));
+    return err;
+}
+
+esp_err_t epaper_album_rename(const char *request,char *error,size_t size)
+{
+    if(!initialized)return ESP_ERR_INVALID_STATE;
+    char *global=NULL,*manifest=NULL,*output=NULL;
+    char manifest_path[EPAPER_PATH_MAX],old_directory[256],new_directory[256],old_path[EPAPER_PATH_MAX],new_path[EPAPER_PATH_MAX],journal[EPAPER_PATH_MAX+32];
+    epaper_album_config_t *config=malloc(sizeof(*config));epaper_catalog_t *replacement=calloc(1,sizeof(*replacement));
+    bool moved=false,saved=false,journal_ready=false;esp_err_t err=ESP_FAIL;
+    if(!config || !replacement){err=ESP_ERR_NO_MEM;goto end;}
+    int n=snprintf(manifest_path,sizeof(manifest_path),"%s%s%s%s",EPAPER_SD_MOUNT,catalog->config.root,!strcmp(catalog->config.root,"/")?"":"/",catalog->config.manifest);
+    if(n<=0 || (size_t)n>=sizeof(manifest_path) || !epaper_json_recover(manifest_path) || !epaper_json_read(manifest_path,&manifest) ||
+       !epaper_json_read(EPAPER_SD_MOUNT CONFIG_EPAPER_CONFIG_PATH,&global))goto end;
+    if(!epaper_album_parse(global,manifest,config,error,size) || memcmp(config,&catalog->config,sizeof(*config))) {
+        snprintf(error,size,"SD configuration changed externally; restart first");goto end;
+    }
+    if(!rename_recover(config,manifest_path)){snprintf(error,size,"Pending rename requires recovery");goto end;}
+    if(!epaper_album_rename_edit(global,manifest,request,&output,config,old_directory,new_directory,sizeof(old_directory),error,size)){err=ESP_ERR_INVALID_ARG;goto end;}
+    if(!album_directory_path(config->root,old_directory,old_path,sizeof(old_path)) || !album_directory_path(config->root,new_directory,new_path,sizeof(new_path)))goto end;
+    struct stat st;
+    if(!stat(new_path,&st) || errno!=ENOENT){snprintf(error,size,"Target folder already exists or is inaccessible");goto end;}
+    const char *id=NULL;for(unsigned i=0;i<config->album_count;i++)if(!strcmp(config->albums[i].directory,new_directory))id=config->albums[i].id;
+    snprintf(journal,sizeof(journal),"%s.rename-pending",manifest_path);
+    if(!id || !rename_journal_write(journal,id,old_directory,new_directory)){snprintf(error,size,"Cannot save rename recovery journal");goto end;}
+    journal_ready=true;
+    if(rename(old_path,new_path)){snprintf(error,size,"Cannot rename album folder");goto end;}moved=true;
+    if(!epaper_catalog_scan(EPAPER_SD_MOUNT,config,replacement,error,size))goto end;
+    if(!epaper_json_replace(manifest_path,output)){snprintf(error,size,"Cannot save album manifest");goto end;}saved=true;cache_save(global,output);
+    /* Same album ID and image bytes: remap the displayed path, retain deadline. */
+    epaper_player_t identity=live,trial;
+    if(!strcmp(identity.current_id,id)) {
+        const char *name=strrchr(identity.current_path,'/');
+        if(name){char filename[256];snprintf(filename,sizeof(filename),"%s",name+1);epaper_album_file_path("",config,id,filename,identity.current_path,sizeof(identity.current_path));}
+    }
+    epaper_player_init(replacement,&trial,esp_random());bool restored=epaper_player_restore(replacement,&trial,&identity);
+    epaper_catalog_t *old_catalog=catalog;catalog=replacement;replacement=old_catalog;live=trial;
+    if(!catalog->total){automatic_stopped=true;err=ESP_OK;}
+    else {automatic_stopped=false;err=restored?(dirty?ESP_OK:persist()):epaper_album_next();}
+    if(err!=ESP_OK)snprintf(error,size,"Folder renamed; display/state update failed: %s",esp_err_to_name(err));
+end:
+    if(journal_ready) {
+        if(moved && !saved && rename(new_path,old_path))snprintf(error,size,"Rename rollback failed; restart to recover");
+        else if(remove(journal))ESP_LOGW(TAG,"Rename journal retained; startup will recover");
+    }
+    free(global);free(manifest);free(output);free(config);epaper_catalog_free(replacement);free(replacement);
+    if(err!=ESP_OK && error && size && !error[0])snprintf(error,size,"Album rename failed: %s",esp_err_to_name(err));
     return err;
 }
 

@@ -20,7 +20,7 @@ static size_t initial_internal, initial_psram;
 static SemaphoreHandle_t mutex;
 static TaskHandle_t monitor_task;
 static const uint32_t internal=MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT, external=MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT;
-static const char *names[]={"synthesis","playback","photo","transfer","ntp","fault","idle"};
+static const char *names[]={"synthesis","playback","photo","transfer","ntp","fault","import","idle"};
 static void sample(void)
 {
     uint32_t total;

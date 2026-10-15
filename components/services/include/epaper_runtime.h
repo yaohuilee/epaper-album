@@ -32,3 +32,5 @@ esp_err_t epaper_album_restore_current(void);
 esp_err_t epaper_album_wifi_restore_root(const char *json);
 bool epaper_album_root_json(char **output);
 esp_err_t epaper_album_save_root_json(const char *json,char *error,size_t size);
+
+esp_err_t epaper_album_rename(const char *request,char *error,size_t size);

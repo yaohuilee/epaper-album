@@ -36,6 +36,8 @@ $commands = @(
     'if errorlevel 1 exit /b 1', '.local\provision_test.exe', 'if errorlevel 1 exit /b 1',
     "cl $common /I`"$cjson`" tests/announcement_test.c components/core/announcement_core.c components/core/audio_sequence.c `"$cjson/cJSON.c`" /Fe:.local/announcement_test.exe /Fo:.local/",
     'if errorlevel 1 exit /b 1', '.local\announcement_test.exe', 'if errorlevel 1 exit /b 1',
+    "cl $common tests/image_test.c components/core/image.c /Fe:.local/image_test.exe /Fo:.local/",
+    'if errorlevel 1 exit /b 1', '.local\image_test.exe', 'if errorlevel 1 exit /b 1',
     "cl $common tests/pcm_resample_test.c components/core/pcm_resample.c /Fe:.local/pcm_resample_test.exe /Fo:.local/",
     'if errorlevel 1 exit /b 1', '.local\pcm_resample_test.exe', 'exit /b %errorlevel%'
 )
@@ -47,6 +49,10 @@ try {
     if (Get-Command node -ErrorAction SilentlyContinue) {
         node tests/announcements_ui_test.cjs
         if ($LASTEXITCODE -ne 0) { throw 'Announcement UI tests failed.' }
+        node tests/albums_ui_test.cjs
+        if ($LASTEXITCODE -ne 0) { throw 'Album UI tests failed.' }
+        node tests/import_ui_test.cjs
+        if ($LASTEXITCODE -ne 0) { throw 'Import UI tests failed.' }
     } else {
         Write-Warning 'Node.js unavailable; announcement UI tests skipped. Run node tests/announcements_ui_test.cjs after installing Node.js.'
     }

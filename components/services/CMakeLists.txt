@@ -2,8 +2,8 @@ set(optional_tts)
 if(EXISTS "${PROJECT_DIR}/.local/esp_tts_sdk/CMakeLists.txt")
     list(APPEND optional_tts esp_tts_sdk)
 endif()
-idf_component_register(SRCS "services.c" "display.c" "runtime.c" "time_sync.c" "wifi_provision.c" "network.c" "captive_dns.c" "provision_screen.c" "provision_render.c" "qrcodegen.c" "http_status.c" "http_files.c" "announcement.c" INCLUDE_DIRS "include"
-    REQUIRES ${optional_tts} board album core devices storage nvs_flash esp_timer freertos esp_wifi esp_netif esp_event esp_http_server esp_app_format esp_psram esp_hw_support spi_flash fatfs mbedtls
+idf_component_register(SRCS "services.c" "display.c" "runtime.c" "time_sync.c" "wifi_provision.c" "network.c" "captive_dns.c" "provision_screen.c" "provision_render.c" "qrcodegen.c" "http_status.c" "http_files.c" "image_import.c" "announcement.c" INCLUDE_DIRS "include"
+    REQUIRES esp_rom ${optional_tts} board album core devices storage nvs_flash esp_timer freertos esp_wifi esp_netif esp_event esp_http_server esp_app_format esp_psram esp_hw_support spi_flash fatfs mbedtls
     EMBED_TXTFILES "status.html" "albums.html" "ui.css" "ui.js" "announcements.js" "setup.html")
 if(CONFIG_EPAPER_PROVISION_WIFI)
     if(NOT EXISTS "${PROJECT_DIR}/.local/wifi_credentials.h")
@@ -21,3 +21,11 @@ if(CONFIG_EPAPER_ESP_TTS)
     set(voice_image "${PROJECT_DIR}/.local/esp_tts_sdk/esp-tts/esp_tts_chinese/esp_tts_voice_data_xiaole.dat")
     esptool_py_flash_to_partition(flash "voice_data" "${voice_image}")
 endif()
+
+if(CONFIG_JD_USE_ROM)
+    message(FATAL_ERROR "Disable CONFIG_JD_USE_ROM: photo import requires the software decoder for grayscale JPEG.")
+endif()
+
+set_source_files_properties("image_import.c" PROPERTIES COMPILE_OPTIONS "-O2")
+idf_component_get_property(jpeg_decoder_lib espressif__esp_jpeg COMPONENT_LIB)
+target_compile_options(${jpeg_decoder_lib} PRIVATE -O2)

@@ -1,4 +1,6 @@
 #include "epaper_http_internal.h"
+#include "epaper_http.h"
+#include "epaper_image_import.h"
 #include "epaper_runtime.h"
 #include "epaper_storage.h"
 #include "esp_timer.h"
@@ -6,6 +8,8 @@
 #include "lwip/sockets.h"
 #include "esp_vfs_fat.h"
 #include "cJSON.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,7 +78,7 @@ static bool query(httpd_req_t *req,bool photo,query_t *out)
         char key[16],decoded[256];if(!decode(p,key,sizeof(key)) || !decode(value,decoded,sizeof(decoded))) goto end;
         unsigned bit;
         if(!strcmp(key,"album")) {bit=1;if(!decoded[0] || strlen(decoded)>=sizeof(out->album)) goto end;strcpy(out->album,decoded);}
-        else if(photo && !strcmp(key,"name")) {bit=2;if(!epaper_photo_name_valid(decoded)) goto end;strcpy(out->name,decoded);}
+        else if(photo && !strcmp(key,"name")) {bit=2;char output[256];if(!epaper_photo_name_valid(decoded) && (strncmp(req->uri,"/api/upload",11) || !epaper_image_upload_name(decoded,output,sizeof(output)))) goto end;strcpy(out->name,decoded);}
         else if(!photo && !strcmp(key,"offset")) {bit=4;if(!integer(decoded,EPAPER_MAX_PHOTOS,&out->offset)) goto end;}
         else if(!photo && !strcmp(key,"limit")) {bit=8;if(!integer(decoded,100,&out->limit) || !out->limit) goto end;}
         else goto end;
@@ -221,6 +225,7 @@ static esp_err_t photo(httpd_req_t *req)
     if(setsockopt(httpd_req_to_sockfd(req),IPPROTO_TCP,TCP_NODELAY,&no_delay,sizeof(no_delay))<0)
         return error_response(req,"500 Internal Server Error","socket_config","Cannot configure transfer socket");
     query_t q;if(!query(req,true,&q)) return error_response(req,"400 Bad Request","bad_query","Expected album and a safe BMP filename");
+    if(req->method==HTTP_PUT && epaper_image_active())return error_response(req,"409 Conflict","busy","Photo conversion is active");
     if(req->method!=HTTP_PUT && req->content_len) return error_response(req,"400 Bad Request","body_not_allowed","GET/DELETE must have no request body");
     if(!epaper_http_file_begin()) return busy(req);
     const epaper_album_config_t *config=epaper_album_configuration();char path[EPAPER_PATH_MAX];
@@ -239,9 +244,53 @@ static esp_err_t photo(httpd_req_t *req)
     }
     epaper_http_file_end(changed);return err;
 }
+static esp_err_t import_photo(httpd_req_t *req)
+{
+    if(!epaper_http_authorized(req))return denied(req);
+    if(req->method==HTTP_GET){cJSON *doc=cJSON_CreateObject();if(doc){epaper_image_json(doc);cJSON_AddBoolToObject(doc,"can_upload",!epaper_image_active()&&epaper_http_file_available(120));}return json_response(req,"200 OK",doc);}
+    if(req->content_len<54 || req->content_len>16u*1024u*1024u)return error_response(req,"413 Content Too Large","upload_limit","Source photo must be 54 bytes to 16 MiB");
+    query_t q;char name[256],target[EPAPER_PATH_MAX],source[EPAPER_PATH_MAX],error[160]={0};
+    if(!query(req,true,&q) || !epaper_image_upload_name(q.name,name,sizeof(name)))return error_response(req,"400 Bad Request","bad_query","Use a safe JPEG or BMP filename");
+    if(epaper_image_active() || !epaper_http_file_available(120) || !epaper_http_file_begin_for(120))return busy(req);
+    const epaper_album_config_t *config=epaper_album_configuration();epaper_file_entry_t *entries=NULL;size_t count=0;uint64_t total=0,free_bytes=0;esp_err_t err=ESP_OK;FILE *f=NULL;uint8_t *buffer=NULL;bool reserved=false,accepted=false,sd_held=true;
+    unsigned job=0;
+    if(!epaper_album_file_path(EPAPER_SD_MOUNT,config,q.album,name,target,sizeof(target))){err=error_response(req,"404 Not Found","album_missing","Unknown album");goto end;}
+    if(epaper_files_list(EPAPER_SD_MOUNT,config,q.album,&entries,&count)!=FILE_LIST_OK || count>=EPAPER_MAX_PHOTOS){err=error_response(req,"409 Conflict","album_limit","Album is full or inaccessible");goto end;}
+    epaper_album_status_t current;epaper_album_status(&current);
+    for(unsigned i=0;i<config->album_count;i++)if(!strcmp(config->albums[i].id,q.album) && config->albums[i].enabled && current.photos>=EPAPER_MAX_PHOTOS){err=error_response(req,"409 Conflict","album_limit","Playback photo limit reached");goto end;}
+    if(esp_vfs_fat_info(EPAPER_SD_MOUNT,&total,&free_bytes)!=ESP_OK || free_bytes<(uint64_t)req->content_len+1152054+65536){err=error_response(req,"507 Insufficient Storage","sd_full","Insufficient space for source and converted BMP");goto end;}
+    if(epaper_image_receive(q.album,q.name,target,config->rotation,source,sizeof(source),&job,error,sizeof(error))!=ESP_OK){err=error_response(req,"409 Conflict","exists",error[0]?error:"Output BMP already exists or conversion is active");goto end;}reserved=true;
+    f=fopen(source,"wb");buffer=malloc(CHUNK_BYTES);if(!f || !buffer){err=error_response(req,"507 Insufficient Storage","sd_write_failed","Cannot stage source photo");goto end;}
+    (void)setvbuf(f,NULL,_IOFBF,FILE_BUFFER_BYTES);
+    epaper_http_sd_unlock();sd_held=false;
+    size_t received=0;int64_t deadline=esp_timer_get_time()+100000000;
+    while(received<req->content_len) {
+        size_t chunk=req->content_len-received;if(chunk>CHUNK_BYTES)chunk=CHUNK_BYTES;
+        int got=httpd_req_recv(req,(char*)buffer,chunk);
+        if(got<=0 || esp_timer_get_time()>deadline){err=error_response(req,"408 Request Timeout","upload_incomplete","Source upload interrupted; partial data discarded");goto end;}
+        while(!epaper_http_sd_try_lock())vTaskDelay(pdMS_TO_TICKS(5));
+        bool wrote=fwrite(buffer,1,(size_t)got,f)==(size_t)got;epaper_http_sd_unlock();
+        if(!wrote){err=error_response(req,"507 Insufficient Storage","sd_write_failed","Cannot write source photo");goto end;}
+        received+=(size_t)got;epaper_image_received(received);vTaskDelay(1);
+    }
+    while(!epaper_http_sd_try_lock())vTaskDelay(pdMS_TO_TICKS(5));
+    sd_held=true;
+    bool flushed=!fflush(f) && !fsync(fileno(f));if(fclose(f))flushed=false;f=NULL;
+    if(!flushed){err=error_response(req,"507 Insufficient Storage","sd_write_failed","Cannot flush source photo");goto end;}
+    if(epaper_image_submit()!=ESP_OK){err=error_response(req,"503 Service Unavailable","memory","Cannot start conversion");goto end;}
+    accepted=true;cJSON *doc=cJSON_CreateObject();cJSON_AddNumberToObject(doc,"job_id",job);cJSON_AddStringToObject(doc,"name",name);cJSON_AddStringToObject(doc,"state","queued");err=json_response(req,"202 Accepted",doc);
+end:
+    if(!sd_held)while(!epaper_http_sd_try_lock())vTaskDelay(pdMS_TO_TICKS(5));
+    if(f)fclose(f);
+    free(buffer);free(entries);
+    if(reserved && !accepted){remove(source);epaper_image_abort("Source upload failed; no BMP was published");}
+    epaper_http_file_end(false);return err;
+}
 esp_err_t epaper_http_register_files(httpd_handle_t server)
 {
     const httpd_uri_t routes[]={
+        {.uri="/api/upload",.method=HTTP_PUT,.handler=import_photo},
+        {.uri="/api/upload",.method=HTTP_GET,.handler=import_photo},
         {.uri="/api/albums",.method=HTTP_GET,.handler=albums},
         {.uri="/api/files",.method=HTTP_GET,.handler=files},
         {.uri="/api/photo",.method=HTTP_GET,.handler=photo},

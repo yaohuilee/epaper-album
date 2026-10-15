@@ -332,6 +332,53 @@ end:
     return true;
 }
 
+bool epaper_album_directory_valid(const char *name)
+{
+    if(!name || !name[0] || strlen(name)>120 || name[0]==' ' || name[strlen(name)-1]==' ' || name[strlen(name)-1]=='.')return false;
+    char file[128],base[128];snprintf(file,sizeof(file),"%s.bmp",name);
+    if(!epaper_photo_name_valid(file))return false;
+    size_t n=strcspn(name,".");for(size_t i=0;i<n;i++)base[i]=(char)toupper((unsigned char)name[i]);base[n]=0;
+    return strcmp(base,"CON") && strcmp(base,"PRN") && strcmp(base,"AUX") && strcmp(base,"NUL") &&
+        !(n==4 && (!strncmp(base,"COM",3)||!strncmp(base,"LPT",3)) && base[3]>='1' && base[3]<='9');
+}
+static bool directory_overlap(const char *a,const char *b)
+{
+    size_t i=0;while(a[i] && b[i] && tolower((unsigned char)a[i])==tolower((unsigned char)b[i]))i++;
+    return (!a[i] && (!b[i] || b[i]=='/')) || (!b[i] && a[i]=='/');
+}
+
+bool epaper_album_rename_edit(const char *global,const char *manifest,const char *request,
+    char **output,epaper_album_config_t *config,char *old_directory,char *new_directory,size_t directory_size,
+    char *error,size_t error_size)
+{
+    *output=NULL;old_directory[0]=new_directory[0]=0;
+    cJSON *edit=parse(request),*doc=parse(manifest);bool ok=false;
+    const char *reason="Invalid album rename request";char id[EPAPER_ID_MAX];
+    if(!edit || !doc || unknown(edit,"|schema_version|id|directory|") || !string_copy(edit,"id",id,sizeof(id)) ||
+       !string_copy(edit,"directory",new_directory,directory_size) || !epaper_album_directory_valid(new_directory))goto end;
+    cJSON *albums=cJSON_GetObjectItemCaseSensitive(doc,"albums"),*entry=NULL;
+    for(cJSON *a=albums?albums->child:NULL;a;a=a->next) {
+        const cJSON *key=item(a,"id");if(cJSON_IsString(key) && !strcmp(key->valuestring,id))entry=a;
+    }
+    reason="Album not found or directory cannot be renamed";
+    if(!entry || !string_copy(entry,"directory",old_directory,directory_size) || !epaper_album_directory_valid(old_directory))goto end;
+    reason="Use a different folder name; case-only changes are not supported";
+    if(directory_overlap(old_directory,new_directory))goto end;
+    for(cJSON *a=albums->child;a;a=a->next)if(a!=entry) {
+        const cJSON *dir=item(a,"directory");
+        if(cJSON_IsString(dir) && (directory_overlap(dir->valuestring,old_directory) || directory_overlap(dir->valuestring,new_directory))) {
+            reason="Directory is shared, nested, or already configured";goto end;
+        }
+    }
+    cJSON_DeleteItemFromObjectCaseSensitive(entry,"directory");
+    if(!cJSON_AddStringToObject(entry,"directory",new_directory))goto end;
+    *output=cJSON_Print(doc);if(!*output || strlen(*output)>16384)goto end;
+    ok=epaper_album_parse(global,*output,config,error,error_size);
+end:
+    cJSON_Delete(edit);cJSON_Delete(doc);
+    if(!ok){free(*output);*output=NULL;return fail(error,error_size,reason);}return true;
+}
+
 bool epaper_album_manage_edit(const char *global,const char *manifest,const char *request,
     bool deleting,char **output,epaper_album_config_t *config,char *directory,size_t directory_size,
     char *error,size_t error_size)
@@ -339,7 +386,7 @@ bool epaper_album_manage_edit(const char *global,const char *manifest,const char
     *output=NULL;directory[0]=0;
     cJSON *edit=parse(request),*doc=parse(manifest);bool ok=false;
     const char *reason="Invalid album management request";
-    if(!edit || !doc || unknown(edit,deleting?"|schema_version|id|":"|schema_version|id|enabled|interval_seconds|")) goto end;
+    if(!edit || !doc || unknown(edit,deleting?"|schema_version|id|":"|schema_version|id|directory|enabled|interval_seconds|")) goto end;
     char id[EPAPER_ID_MAX];
     if(!string_copy(edit,"id",id,sizeof(id))) goto end;
     for(const char *p=id;*p;p++) if(!((*p>='a'&&*p<='z')||(*p>='A'&&*p<='Z')||(*p>='0'&&*p<='9')||*p=='_'||*p=='-')) goto end;
@@ -361,8 +408,7 @@ bool epaper_album_manage_edit(const char *global,const char *manifest,const char
         if(!string_copy(entry,"directory",directory,directory_size) || strchr(directory,'/') || strchr(directory,'\\') || directory[0]=='.') goto end;
         for(cJSON *a=albums->child;a;a=a->next) if(a!=entry) {
             const cJSON *dir=item(a,"directory");
-            if(cJSON_IsString(dir) && (!strcmp(dir->valuestring,directory) ||
-               (!strncmp(dir->valuestring,directory,strlen(directory)) && dir->valuestring[strlen(directory)]=='/'))) {
+            if(cJSON_IsString(dir) && directory_overlap(dir->valuestring,directory)) {
                 reason="Directory is shared by another configured album";goto end;
             }
         }
@@ -370,9 +416,12 @@ bool epaper_album_manage_edit(const char *global,const char *manifest,const char
     } else {
         reason="Album limit reached or ID/directory already exists";
         if(found>=0 || cJSON_GetArraySize(albums)>=EPAPER_MAX_ALBUMS) goto end;
+        if(item(edit,"directory")) {if(!string_copy(edit,"directory",directory,directory_size))goto end;}
+        else {if(strlen(id)>=directory_size)goto end;strcpy(directory,id);}
+        reason="Invalid folder name";if(!epaper_album_directory_valid(directory))goto end;
         for(cJSON *a=albums->child;a;a=a->next) {
             const cJSON *dir=item(a,"directory");
-            if(cJSON_IsString(dir) && !strcmp(dir->valuestring,id)) goto end;
+            if(cJSON_IsString(dir) && directory_overlap(dir->valuestring,directory))goto end;
         }
         char filename[EPAPER_ID_MAX+5];snprintf(filename,sizeof(filename),"%s.bmp",id);
         if(!epaper_photo_name_valid(filename) || strlen(id)>=directory_size) goto end;
@@ -380,10 +429,9 @@ bool epaper_album_manage_edit(const char *global,const char *manifest,const char
         reason="Invalid enabled flag or interval (120..604800 seconds)";
         if(!boolean(edit,"enabled",false,&enabled) || !number(edit,"interval_seconds",900,120,604800,&interval)) goto end;
         cJSON *entry=cJSON_CreateObject();if(!entry) goto end;
-        if(!cJSON_AddStringToObject(entry,"id",id) || !cJSON_AddStringToObject(entry,"directory",id) ||
+        if(!cJSON_AddStringToObject(entry,"id",id) || !cJSON_AddStringToObject(entry,"directory",directory) ||
            !cJSON_AddBoolToObject(entry,"enabled",enabled) || !cJSON_AddNumberToObject(entry,"interval_seconds",interval) ||
            !cJSON_AddItemToArray(albums,entry)) {cJSON_Delete(entry);goto end;}
-        strcpy(directory,id);
     }
     *output=cJSON_Print(doc);
     if(!*output || strlen(*output)>16384) goto end;

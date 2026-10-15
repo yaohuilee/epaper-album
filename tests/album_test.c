@@ -210,7 +210,21 @@ static void album_management_tests(void)
     }
     const char *last="{\"schema_version\":1,\"playback\":{},\"albums\":[{\"id\":\"a\",\"directory\":\"a\"}]}";
     CHECK(epaper_album_manage_edit(global,last,"{\"schema_version\":1,\"id\":\"a\"}",true,&out,c,directory,sizeof(directory),error,sizeof(error)));
-    CHECK(c->album_count==0);free(out);free(c);
+    CHECK(c->album_count==0);free(out);out=NULL;
+    CHECK(epaper_album_manage_edit(global,manifest,"{\"schema_version\":1,\"id\":\"cn\",\"directory\":\"武汉风景\"}",false,&out,c,directory,sizeof(directory),error,sizeof(error)));
+    CHECK(!strcmp(directory,"武汉风景") && !c->albums[3].enabled);free(out);out=NULL;
+    char previous[256],next[256];
+    CHECK(epaper_album_rename_edit(global,manifest,"{\"schema_version\":1,\"id\":\"a\",\"directory\":\"旅行相册\"}",&out,c,previous,next,sizeof(next),error,sizeof(error)));
+    CHECK(!strcmp(c->albums[0].id,"a") && !strcmp(c->albums[0].directory,"旅行相册") && c->albums[0].enabled && c->albums[0].interval==900);free(out);out=NULL;
+    const char *bad_names[]={"", "../escape", "a/b", "A", "b", "off", "CON", "CON.txt", ".hidden", "trailing.", "x..y", " a", "a ", "a\\b"};
+    for(unsigned i=0;i<sizeof(bad_names)/sizeof(bad_names[0]);i++) {
+        cJSON *edit=cJSON_CreateObject();cJSON_AddNumberToObject(edit,"schema_version",1);cJSON_AddStringToObject(edit,"id","a");cJSON_AddStringToObject(edit,"directory",bad_names[i]);char *request=cJSON_PrintUnformatted(edit);
+        CHECK(!epaper_album_rename_edit(global,manifest,request,&out,c,previous,next,sizeof(next),error,sizeof(error)));free(request);cJSON_Delete(edit);
+    }
+    const char *shared="{\"schema_version\":1,\"albums\":[{\"id\":\"a\",\"directory\":\"a\"},{\"id\":\"nested\",\"directory\":\"A/sub\"}]}";
+    CHECK(!epaper_album_rename_edit(global,shared,"{\"schema_version\":1,\"id\":\"a\",\"directory\":\"new\"}",&out,c,previous,next,sizeof(next),error,sizeof(error)));
+    CHECK(!epaper_album_manage_edit(global,manifest,"{\"schema_version\":1,\"id\":\"new\",\"directory\":\"B\"}",false,&out,c,directory,sizeof(directory),error,sizeof(error)));
+    free(c);
 }
 int main(void)
 {album_management_tests();bmp_tests();config_tests();player_tests();file_tests();provision_config_tests();printf("album tests: %u checks passed\n",checks);return 0;}

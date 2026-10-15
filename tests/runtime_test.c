@@ -277,6 +277,30 @@ int main(void)
     CHECK(epaper_album_settings("{\"schema_version\":1,\"album_ids\":[\"world-new\"],\"interval_seconds\":900}",error,sizeof(error))==ESP_OK);
     CHECK(catalog->total==1 && refreshes==before+1 && !automatic_stopped && !strcmp(live.current_id,"world-new"));
     CHECK(epaper_album_manage("{\"schema_version\":1,\"id\":\"world-new\"}",true,error,sizeof(error))!=ESP_OK);
+    /* Rename displayed photos without refreshing or resetting their deadline. */
+    original=deadline;before=refreshes;
+    CHECK(epaper_album_rename("{\"schema_version\":1,\"id\":\"world-new\",\"directory\":\"renamed-current\"}",error,sizeof(error))==ESP_OK);
+    CHECK(!strcmp(live.current_id,"world-new") && strstr(live.current_path,"/renamed-current/001.bmp"));
+    CHECK(deadline==original && refreshes==before && catalog->config.albums[0].interval==900 && catalog->config.albums[0].enabled);
+    CHECK(epaper_photo_validate(".local/test-sd/albums/renamed-current/001.bmp",0));
+    CHECK(epaper_album_rename("{\"schema_version\":1,\"id\":\"world-new\",\"directory\":\"world-new\"}",error,sizeof(error))==ESP_OK);
+    CHECK(deadline==original && refreshes==before);
+    /* Manifest write failure must move the folder back and keep the old identity. */
+    CHECK(!make_directory(".local/test-sd/albums/albums.json.web-tmp"));
+    CHECK(epaper_album_rename("{\"schema_version\":1,\"id\":\"world-new\",\"directory\":\"rollback-folder\"}",error,sizeof(error))!=ESP_OK);
+    CHECK(epaper_photo_validate(".local/test-sd/albums/world-new/001.bmp",0) && strstr(live.current_path,"/world-new/001.bmp"));
+    CHECK(!remove_directory(".local/test-sd/albums/albums.json.web-tmp"));
+    /* Power loss after directory rename but before manifest commit: reboot rolls back. */
+    CHECK(rename_journal_write(".local/test-sd/albums/albums.json.rename-pending","world-new","world-new","interrupted"));
+    CHECK(!rename(".local/test-sd/albums/world-new",".local/test-sd/albums/interrupted"));
+    reboot(false);CHECK(epaper_photo_validate(".local/test-sd/albums/world-new/001.bmp",0));
+    CHECK(!strcmp(catalog->config.albums[0].directory,"world-new") && strstr(live.current_path,"/world-new/001.bmp"));
+    /* Completed manifest commit with a leftover journal: keep the renamed folder. */
+    CHECK(epaper_album_rename("{\"schema_version\":1,\"id\":\"world-new\",\"directory\":\"completed\"}",error,sizeof(error))==ESP_OK);
+    CHECK(rename_journal_write(".local/test-sd/albums/albums.json.rename-pending","world-new","world-new","completed"));
+    reboot(false);CHECK(!strcmp(catalog->config.albums[0].directory,"completed"));
+    CHECK(epaper_photo_validate(".local/test-sd/albums/completed/001.bmp",0));
+    CHECK(epaper_album_rename("{\"schema_version\":1,\"id\":\"world-new\",\"directory\":\"world-new\"}",error,sizeof(error))==ESP_OK);
     /* Beijing 22:00..06:00: persist independently and defer deadlines through sleep. */
     const uint64_t day=1767225600000000ULL,hour=3600000000ULL;
     uint64_t old_deadline=deadline;before=refreshes;
@@ -316,3 +340,4 @@ int main(void)
     epaper_catalog_free(catalog);free(catalog);free(frame);
     printf("runtime tests: %u checks passed\n",checks);return 0;
 }
+

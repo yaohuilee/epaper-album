@@ -57,3 +57,11 @@ python tools/stress_device.py --url http://DEVICE_IP --output ../stress-results
 | POST /api/diagnostics/network-fault | 请求{}，USB主机连接且统计恢复任务存在时允许 |
 
 故障恢复先重连，最多等待10秒，之后交回正常联网重试逻辑；不修改SSID或密码。设备重启会清除注入状态。故障注入关闭时没有此接口。受限于任务数上限48，snapshot_failures非零表示存在无效采样，不能直接采用CPU结果。
+
+## 原图转换并发：0.17.0（2026-10-15）
+
+COM7 同型设备，4032×3024基线 JPEG 收齐后触发整点试听，在语音任务 busy 时请求下一张。试听实际结果 succeeded，换图控制任务 succeeded，转换依次经历 decoding、waiting、dithering、writing、validating、indexing、succeeded。转换总时长72.913秒，其中暂停53.495秒；无等待的大图转换19.414秒。
+
+该窗口初始内部可用堆156503字节、PSRAM8110720字节，最低87319字节（85.3 KiB）和4923208字节（4.70 MiB）；结束后内部152243字节、PSRAM回到8110720字节，运行时间快照失败0次。新增转换工作区上界：JPEG约2.26 MiB，1200像素宽BMP约1.17 MiB。低水位是窗口指标，不代表两项最低值同时出现。
+
+以双核总容量为100%，转换阶段整机平均CPU17.21%，photo_import任务10.63%；该阶段包含53.5秒等待，不能用来代表纯计算速度。重叠语音合成窗口整机平均36.95%，播放4.27%，屏幕刷新4.93%。未观察到内存不足、异常重启或试听失败。
