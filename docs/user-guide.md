@@ -21,7 +21,7 @@ python tools/prepare_photos.py originals prepared --preview-dir previews
 
 ## 2. 连接 Wi-Fi
 
-首次没有有效Wi-Fi时，设备显示配网画面。已联网时，长按KEY约2秒后松开也可进入配网。
+首次没有有效Wi-Fi配置时，设备显示配网画面。已有配置时，断网不影响本地照片轮播，也不会自动显示配网画面。长按KEY约2秒后松开可手动进入配网。
 
 1. 用手机WLAN设置中的扫码入口扫描左侧二维码，或手动连接屏幕上的 `epaper-album-XXXXXX` 开放热点。
 2. 手机可自动弹出配网页面。未弹出时打开 `http://192.168.7.60/setup`，也可扫描右侧网页二维码。

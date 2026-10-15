@@ -24,3 +24,6 @@ bool epaper_usb_keep_awake(epaper_usb_policy_t *state,bool host,int64_t now_us);
 
 /* Unknown power status keeps the device awake until a successful read. */
 bool epaper_power_keep_awake(bool usb_host,bool power_valid,bool vbus_good);
+
+/* Automatic setup depends on saved settings, never on connection success. */
+bool epaper_network_auto_provision(bool enabled,const char *ssid);

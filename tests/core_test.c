@@ -4,6 +4,13 @@
 
 int main(void)
 {
+    /* First startup requires setup. Saved credentials remain usable offline. */
+    assert(epaper_network_auto_provision(false,NULL));
+    assert(epaper_network_auto_provision(false,"saved-network"));
+    assert(epaper_network_auto_provision(true,NULL));
+    assert(epaper_network_auto_provision(true,""));
+    assert(!epaper_network_auto_provision(true,"saved-network"));
+    assert(!epaper_network_auto_provision(true,"hidden-network"));
     epaper_calendar_t c;
     int64_t epoch=0;
     epaper_calendar_t utc={.year=2026,.month=10,.day=14,.weekday=3,.hour=12,.minute=46,.second=0};

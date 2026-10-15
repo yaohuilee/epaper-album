@@ -26,6 +26,7 @@ typedef enum { BUTTON_NEXT, BUTTON_SLEEP, BUTTON_KEY, BUTTON_PROVISION, BUTTON_P
 static QueueHandle_t events;
 static epaper_usb_policy_t usb_policy;
 static bool usb_debug,usb_reported,power_valid,power_vbus;
+static int64_t network_retry_at;
 /* Retain the last actual sleep conditions for charger/battery verification. */
 static RTC_DATA_ATTR epaper_power_t previous_sleep_power;
 static RTC_DATA_ATTR bool previous_sleep_valid;
@@ -80,7 +81,7 @@ static esp_err_t provision_start(void)
 }
 static void web_status(bool awake)
 {
-    static int64_t retry_at,update_at;
+    static int64_t update_at;
     int64_t now=esp_timer_get_time();
     bool portal=epaper_network_provisioning();
     epaper_time_network_hold(awake || portal);
@@ -96,17 +97,16 @@ static void web_status(bool awake)
         return;
     }
     if(!awake) {
-        epaper_http_stop();epaper_network_stop();retry_at=update_at=0;return;
+        epaper_http_stop();epaper_network_stop();network_retry_at=update_at=0;return;
     }
     if(!epaper_network_online() || !epaper_http_running()) {
         if(!epaper_announcement_admit(150))return;
-        if(now<retry_at) return;
+        if(now<network_retry_at) return;
         epaper_http_stop();
         esp_err_t err=epaper_network_start(epaper_album_time_config());
-        if(err!=ESP_OK) {err=provision_start();}
-        else err=epaper_http_start();
+        if(err==ESP_OK) err=epaper_http_start();
         if(err!=ESP_OK) {
-            retry_at=esp_timer_get_time()+60000000;
+            network_retry_at=esp_timer_get_time()+60000000;
             ESP_LOGW(TAG,"Status page unavailable: %s; retry in 60 seconds",esp_err_to_name(err));return;
         }
     }
@@ -213,11 +213,25 @@ void app_main(void)
     bool awake_boot=keep_awake();
     epaper_time_network_hold(true);
     bool attempted=epaper_time_due();
-    if(attempted && epaper_announcement_admit(150)) epaper_time_sync();
+    if(attempted && epaper_announcement_admit(150)) {
+        err=epaper_time_sync();
+        if(err!=ESP_OK && !epaper_network_online()) network_retry_at=esp_timer_get_time()+60000000;
+    }
     const epaper_time_config_t *network=epaper_album_time_config();
-    if(epaper_announcement_admit(150) && !epaper_network_online() && (!deep || awake_boot || attempted || !network || !network->enabled)) {
+    /* Only an absent network configuration opens the automatic setup screen.
+       A saved network can be unavailable indefinitely without stopping photos. */
+    if(epaper_network_auto_provision(network && network->enabled,network?network->ssid:NULL)) {
+        if(epaper_announcement_admit(150)) {
+            err=provision_start();
+            if(err!=ESP_OK) ESP_LOGE(TAG,"Provisioning failed: %s",esp_err_to_name(err));
+        }
+    } else if(epaper_announcement_admit(150) && !epaper_network_online() &&
+              esp_timer_get_time()>=network_retry_at && (!deep || awake_boot || attempted)) {
         err=epaper_network_start(network);
-        if(err!=ESP_OK) {err=provision_start();if(err!=ESP_OK) ESP_LOGE(TAG,"Provisioning failed: %s",esp_err_to_name(err));}
+        if(err!=ESP_OK) {
+            network_retry_at=esp_timer_get_time()+60000000;
+            ESP_LOGW(TAG,"Saved Wi-Fi unavailable: %s; album continues",esp_err_to_name(err));
+        }
     }
     diagnostics();
     bool queued_next=false,queued_provision=false;
@@ -233,7 +247,7 @@ void app_main(void)
         if(awake) manual_sleep=false;
         if(!epaper_network_provisioning() && !epaper_network_fault_active() && epaper_announcement_admit(150) && epaper_time_due()) {
             err=epaper_time_sync();
-            if(err!=ESP_OK && !epaper_network_online() && epaper_network_start(epaper_album_time_config())!=ESP_OK) provision_start();
+            if(err!=ESP_OK && !epaper_network_online()) network_retry_at=esp_timer_get_time()+60000000;
             idle_until=esp_timer_get_time()+(int64_t)CONFIG_EPAPER_IDLE_SECONDS*1000000;
         }
         button_event_t e;bool next=false;

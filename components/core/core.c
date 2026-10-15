@@ -79,3 +79,6 @@ bool epaper_calendar_epoch_utc(const epaper_calendar_t *c,int64_t *epoch)
     *epoch=(days+c->day-1)*86400+c->hour*3600+c->minute*60+c->second;
     return true;
 }
+
+bool epaper_network_auto_provision(bool enabled,const char *ssid)
+{ return !enabled || !ssid || !ssid[0]; }
