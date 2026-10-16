@@ -11,6 +11,7 @@
 | ESP-TTS / ESP-SR | 通过安装器获取S3预编译库与小乐音库；本地依赖不随源码仓库分发 | [ESPRESSIF MIT](third_party/licenses/ESP-TTS-Espressif-MIT.txt)，许可限Espressif产品使用；API头文件保留其Apache-2.0声明 |
 | ESP-IDF v5.5.3 | 外部SDK依赖，未复制SDK到仓库 | [Apache-2.0主许可](third_party/licenses/ESP-IDF-Apache-2.0.txt)，SDK内第三方组件另有各自许可 |
 | esp_jpeg 1.3.1 / TJpgDec | IDF Component Manager 外部依赖，使用软件解码，未复制库源码到仓库 | esp_jpeg [Apache-2.0](third_party/licenses/ESP-IDF-Apache-2.0.txt)；TJpgDec [ChaN许可声明](third_party/licenses/TJpgDec.txt) |
+| libpng 1.6.58 / zlib 1.3.2 | IDF Component Manager 外部依赖，版本固定于 dependencies.lock | [libpng许可](third_party/licenses/libpng-LICENSE.txt)、[zlib许可](third_party/licenses/zlib-LICENSE.txt)；乐鑫PSRAM包装代码保留Apache-2.0声明 |
 | Pillow | 电脑端图片/字模工具的外部依赖 | [MIT-CMU许可](https://github.com/python-pillow/Pillow/blob/11.2.1/LICENSE) |
 
 二维码来源：[Project Nayuki](https://www.nayuki.io/page/qr-code-generator-library)。字体来源：[Noto Sans SC](https://github.com/google/fonts/tree/main/ofl/notosanssc)、[Noto Sans Mono](https://github.com/google/fonts/tree/main/ofl/notosansmono)。
@@ -42,3 +43,7 @@ ESP-IDF内部的cJSON、lwIP等组件按各自文件许可使用。发布包含S
 ## JPEG 解码
 
 0.17.0 使用 [Espressif esp_jpeg 1.3.1](https://components.espressif.com/components/espressif/esp_jpeg/versions/1.3.1/readme)，组件版本和校验信息固定在 dependencies.lock。关闭 ROM 解码，使用组件内软件 TJpgDec，以支持灰度 JPEG。Espressif 包装代码采用 Apache-2.0；TJpgDec 保留 ChaN 2021 版权和原有许可声明。分发固件时保留这两项声明。
+
+## PNG解码
+
+0.17.2 使用 [Espressif libpng 1.6.58~2](https://components.espressif.com/components/espressif/libpng/versions/1.6.58~2/readme) 与传递依赖 zlib 1.3.2~1。上游库代码由Component Manager下载到managed_components，不复制到仓库；仓库保留两项上游许可文本，构建与固件分发须保留声明。新增解码适配和采样代码为本项目原创代码，采用MIT。

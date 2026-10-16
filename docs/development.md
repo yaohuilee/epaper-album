@@ -78,3 +78,5 @@ COM5只是本机例子，使用前核对目标。SD配置和照片独立保留�
 0.17.0 新增 espressif/esp_jpeg 1.3.1，IDF Component Manager 根据 components/services/idf_component.yml 与 dependencies.lock 下载依赖。首次构建需要网络，managed_components 和构建产物不提交。CONFIG_JD_USE_ROM=n 使用软件 TJpgDec，支持灰度图；启用 ROM 会在 CMake 配置阶段拒绝构建。转换与 JPEG 解码源使用 -O2。
 
 components/core/image.c 是可在桌面测试的裁剪、方向、BMP解析和抖动核心；services/image_import.c 管理低优先级任务、SD暂存、进度及发布。运行 tools/Test.ps1 包含图像核心和上传页面异常测试。Enter-Idf.ps1 重复激活时沿用已启用的 IDF Python 虚拟环境。
+
+0.17.2 新增官方 espressif/libpng 1.6.58~2，传递依赖 espressif/zlib 1.3.2~1，具体校验信息保存在 dependencies.lock。services/png_import.c 按行解码并限制库分配，内存位于PSRAM；core/image.c 在目标图像上累计双线性采样，支持Adam7实际像素筛选。无需整张来源RGBA缓冲。PNG解码、libpng和zlib使用-O2，桌面图像测试覆盖透明白底及交错一致性。

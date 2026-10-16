@@ -22,6 +22,22 @@ int main(void)
         for(unsigned by=0;by<5;by+=2)for(unsigned bx=0;bx<9;bx+=3){unsigned right=bx+2,bottom=by+1;if(bottom>4)bottom=4;uint8_t block[3*2*3];for(unsigned y=by;y<=bottom;y++)memcpy(block+(y-by)*9,source_rgb+(y*9+bx)*3,9);epaper_image_add_block(m,accum,block,bx,right,by,bottom);}
         for(unsigned y=0;y<7;y++)for(unsigned x=0;x<11;x++){unsigned weights[4];epaper_image_weights(m,x,y,weights);for(unsigned c=0;c<3;c++){unsigned expected=0;for(unsigned k=0;k<4;k++){unsigned sx,sy;epaper_image_original(m,(k&1)?m->x[x].high:m->x[x].low,(k&2)?m->y[y].high:m->y[y].low,&sx,&sy);expected+=source_rgb[(sy*9+sx)*3+c]*weights[k];}CHECK(accum[(y*11+x)*3+c]==expected);}}
     }
+    /* RGBA compositing and Adam7 contributions must produce the same samples. */
+    for(unsigned sw=1;sw<=17;sw++)for(unsigned sh=1;sh<=11;sh++) {
+        uint8_t rgba[17*11*4];uint16_t full[13*9*3]={0},adam[13*9*3]={0};
+        for(unsigned i=0;i<sw*sh;i++){rgba[i*4]=(uint8_t)(i*13);rgba[i*4+1]=(uint8_t)(i*29);rgba[i*4+2]=(uint8_t)(i*47);rgba[i*4+3]=(uint8_t)(i%3==0?0:i%3==1?128:255);}
+        CHECK(epaper_image_map(m,sw,sh,13,9,1));
+        for(unsigned y=0;y<sh;y++)epaper_image_add_rgba_row(m,full,rgba+y*sw*4,y,7);
+        for(unsigned pass=0;pass<7;pass++)for(unsigned y=0;y<sh;y++)epaper_image_add_rgba_row(m,adam,rgba+y*sw*4,y,pass);
+        for(unsigned y=0;y<9;y++)for(unsigned x=0;x<13;x++) {
+            unsigned weights[4];epaper_image_weights(m,x,y,weights);
+            for(unsigned c=0;c<3;c++) {
+                unsigned expected=0;
+                for(unsigned k=0;k<4;k++){const uint8_t *p=rgba+(((k&2)?m->y[y].high:m->y[y].low)*sw+((k&1)?m->x[x].high:m->x[x].low))*4;expected+=((p[c]*p[3]+255u*(255u-p[3])+127u)/255u)*weights[k];}
+                CHECK(full[(y*13+x)*3+c]==expected);CHECK(full[(y*13+x)*3+c]==adam[(y*13+x)*3+c]);
+            }
+        }
+    }
     CHECK(!epaper_image_map(m,0,1,800,480,1));CHECK(!epaper_image_map(m,12001,1,800,480,1));
     uint8_t header[54];epaper_image_bmp_t bmp;epaper_image_bmp_output_header(header,800,480);
     CHECK(epaper_image_bmp_header(header,1152054,&bmp));CHECK(bmp.width==800&&bmp.height==480&&!bmp.top_down);

@@ -121,3 +121,24 @@ void epaper_image_add_block(const epaper_image_map_t *m,uint16_t *accum,const ui
         }
     }
 }
+
+void epaper_image_add_rgba_row(const epaper_image_map_t *m,uint16_t *accum,const uint8_t *rgba,unsigned source_y,unsigned pass)
+{
+    static const unsigned xs[7]={0,4,0,2,0,1,0},ys[7]={0,0,4,0,2,0,1};
+    static const unsigned dx[7]={8,8,4,4,2,2,1},dy[7]={8,8,8,4,4,2,2};
+    if(pass>7 || m->orientation!=1 || source_y>=m->source_height)return;
+    if(pass<7 && (source_y<ys[pass] || (source_y-ys[pass])%dy[pass]))return;
+    unsigned first=epaper_image_first(m->y,m->height,source_y);
+    for(unsigned y=first;y<m->height && m->y[y].low<=source_y;y++)for(unsigned x=0;x<m->width;x++) {
+        unsigned weights[4];epaper_image_weights(m,x,y,weights);
+        for(unsigned k=0;k<4;k++)if(weights[k] && (unsigned)((k&2)?m->y[y].high:m->y[y].low)==source_y) {
+            unsigned sx=(k&1)?m->x[x].high:m->x[x].low;
+            if(pass<7 && (sx<xs[pass] || (sx-xs[pass])%dx[pass]))continue;
+            const uint8_t *p=rgba+(size_t)sx*4;uint16_t *d=accum+((size_t)y*m->width+x)*3;
+            for(unsigned c=0;c<3;c++) {
+                unsigned value=(p[c]*p[3]+255u*(255u-p[3])+127u)/255u;
+                d[c]=(uint16_t)(d[c]+value*weights[k]);
+            }
+        }
+    }
+}

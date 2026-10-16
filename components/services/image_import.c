@@ -8,6 +8,7 @@
 #include "epaper_storage.h"
 #include "epaper_profile.h"
 #include "tjpgd.h"
+#include "png_import.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
 #include "esp_log.h"
@@ -50,7 +51,7 @@ bool epaper_image_upload_name(const char *name,char *output,size_t size)
     const char *dot=strrchr(name,'.');if(!dot)return false;
     char ext[8];size_t count=strlen(dot);if(count>=sizeof(ext))return false;
     for(size_t i=0;i<=count;i++)ext[i]=(char)tolower((unsigned char)dot[i]);
-    if(strcmp(ext,".jpg") && strcmp(ext,".jpeg") && strcmp(ext,".bmp"))return false;
+    if(strcmp(ext,".jpg") && strcmp(ext,".jpeg") && strcmp(ext,".png") && strcmp(ext,".bmp"))return false;
     size_t base=(size_t)(dot-name);if(!base || base+5>size)return false;
     memcpy(output,name,base);memcpy(output+base,".bmp",5);return epaper_photo_name_valid(output);
 }
@@ -111,10 +112,13 @@ static int jpeg_output(JDEC *decoder,void *bitmap,JRECT *rect)
     epaper_image_add_block(m,io->accum,bitmap,rect->left,rect->right,rect->top,rect->bottom);
     if(!(++io->blocks%256)){phase("decoding",5+25u*(rect->bottom+1)/m->source_height);vTaskDelay(1);}return 1;
 }
+static void png_lock(void){gate();}
+static void png_progress(unsigned sw,unsigned sh,unsigned progress,size_t workspace)
+{dimensions(sw,sh,(target_rotation==90||target_rotation==270)?480:800,(target_rotation==90||target_rotation==270)?800:480,workspace);phase("decoding",progress);}
 static void worker(void *unused)
 {
     (void)unused;epaper_profile_phase(PROFILE_IMPORT,true);FILE *input=NULL,*output=NULL;uint8_t *rgb=NULL,*row=NULL,*source_rows=NULL;int32_t *errors=NULL;void *pool=NULL;epaper_image_map_t *map=NULL;
-    const char *failure="Image conversion failed";bool published=false;int64_t processing_start=esp_timer_get_time();
+    char png_error[160]={0};const char *failure="Image conversion failed";bool published=false;int64_t processing_start=esp_timer_get_time();
     portENTER_CRITICAL(&state_lock);state.processing_started=processing_start;portEXIT_CRITICAL(&state_lock);
     unsigned w=(target_rotation==90||target_rotation==270)?480:800,h=(target_rotation==90||target_rotation==270)?800:480;
     size_t pixels=(size_t)w*h;map=heap_caps_malloc(sizeof(*map),MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
@@ -139,6 +143,10 @@ static void worker(void *unused)
         result=jd_decomp(&decoder,jpeg_output,(uint8_t)scale);if(result!=JDR_OK){failure="JPEG decoding failed or input was interrupted";goto end;}
         for(size_t i=0;i<pixels*3;i++)rgb[i]=(uint8_t)(((uint16_t*)rgb)[i]>>8);
         free(pool);pool=NULL;
+    } else if(!memcmp(header,"\x89PNG\r\n\x1a\n",8)) {
+        if(!read_at(input,0,header,0)){failure="PNG source cannot be rewound";goto end;}
+        const epaper_png_hooks_t hooks={.lock=png_lock,.unlock=epaper_http_sd_unlock,.report=png_progress};
+        if(!epaper_png_decode(input,map,w,h,&rgb,&hooks,png_error,sizeof(png_error))){failure=png_error;goto end;}
     } else {
         epaper_image_bmp_t bmp;if(!epaper_image_bmp_header(header,(uint64_t)st.st_size,&bmp)){failure="Require 24-bit uncompressed BMP with valid dimensions and complete pixels";goto end;}
         if(!epaper_image_map(map,bmp.width,bmp.height,w,h,1))goto end;

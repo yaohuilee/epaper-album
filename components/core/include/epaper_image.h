@@ -24,3 +24,5 @@ void epaper_image_dither_row(const uint8_t *rgb,unsigned width,unsigned y,const 
 unsigned epaper_image_exif_orientation(const uint8_t *segment,size_t bytes);
 
 void epaper_image_add_block(const epaper_image_map_t *map,uint16_t *accum,const uint8_t *bitmap,unsigned left,unsigned right,unsigned top,unsigned bottom);
+/* pass 0..6 selects actual Adam7 pixels; pass 7 is a complete noninterlaced row. */
+void epaper_image_add_rgba_row(const epaper_image_map_t *map,uint16_t *accum,const uint8_t *rgba,unsigned source_y,unsigned pass);
