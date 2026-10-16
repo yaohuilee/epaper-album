@@ -53,6 +53,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Album UI tests failed.' }
         node tests/import_ui_test.cjs
         if ($LASTEXITCODE -ne 0) { throw 'Import UI tests failed.' }
+        node tests/show_photo_ui_test.cjs
+        if ($LASTEXITCODE -ne 0) { throw 'Show photo UI tests failed.' }
     } else {
         Write-Warning 'Node.js unavailable; announcement UI tests skipped. Run node tests/announcements_ui_test.cjs after installing Node.js.'
     }

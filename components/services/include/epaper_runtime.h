@@ -26,6 +26,7 @@ esp_err_t epaper_album_time_settings(const char *request,char *error,size_t size
 esp_err_t epaper_album_wifi_settings(const char *request,char *error,size_t size);
 /* Reindex file mutations; preserve still-valid display identity and deadline. */
 esp_err_t epaper_album_rescan(void);
+esp_err_t epaper_album_show_photo(const char *request,char *error,size_t size);
 esp_err_t epaper_album_mark_display_dirty(void);
 esp_err_t epaper_album_restore_current(void);
 /* Restore exact pre-provisioning root JSON, including initially disabled Wi-Fi. */

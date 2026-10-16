@@ -70,3 +70,5 @@ body:has(dialog[open]){overflow:hidden}.app-dialog{max-width:calc(100vw - 32px);
 .folder-open{flex:1}.folder-actions{margin-top:auto}
 
 .upload-state{min-height:20px;margin:8px 0 0;font-variant-numeric:tabular-nums}
+
+.photo .actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.photo .display-photo{grid-column:1/-1;min-height:40px}

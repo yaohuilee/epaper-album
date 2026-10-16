@@ -8,6 +8,8 @@ static unsigned refreshes,writes,checks;
 static bool display_fail;
 typedef struct {unsigned char bytes[33000];size_t size;} blob_t;
 static blob_t player_blob,config_blob;
+static uint8_t manual_byte;
+static bool player_write_fail;
 static uint8_t dirty_byte=1;
 #define CHECK(x) do {checks++;if(!(x)){fprintf(stderr,"FAIL runtime line %d: %s\n",__LINE__,#x);exit(1);}} while(0)
 #include "../components/services/runtime.c"
@@ -28,13 +30,14 @@ esp_err_t nvs_get_blob(nvs_handle_t h,const char *key,void *out,size_t *size)
 }
 esp_err_t nvs_set_blob(nvs_handle_t h,const char *key,const void *data,size_t size)
 {
-    (void)h;blob_t *b=!strcmp(key,"player")?&player_blob:&config_blob;
+    (void)h;if(player_write_fail && !strcmp(key,"player"))return ESP_FAIL;
+    blob_t *b=!strcmp(key,"player")?&player_blob:&config_blob;
     CHECK(size<=sizeof(b->bytes));memcpy(b->bytes,data,size);b->size=size;writes++;return ESP_OK;
 }
 esp_err_t nvs_get_u8(nvs_handle_t h,const char *key,uint8_t *out)
-{(void)h;(void)key;*out=dirty_byte;return ESP_OK;}
+{(void)h;*out=!strcmp(key,"manual")?manual_byte:dirty_byte;return ESP_OK;}
 esp_err_t nvs_set_u8(nvs_handle_t h,const char *key,uint8_t value)
-{(void)h;(void)key;dirty_byte=value;writes++;return ESP_OK;}
+{(void)h;if(!strcmp(key,"manual"))manual_byte=value;else dirty_byte=value;writes++;return ESP_OK;}
 esp_err_t nvs_commit(nvs_handle_t h) {(void)h;return ESP_OK;}
 void nvs_close(nvs_handle_t h) {(void)h;}
 esp_err_t epaper_display_frame(const uint8_t *data)
@@ -336,6 +339,71 @@ int main(void)
     catalog->config.night_enabled=false;catalog->config.night_start=1320;catalog->config.night_end=360;
     CHECK(!remove(".local/test-sd/albums/world-new/001.bmp"));CHECK(epaper_album_rescan()==ESP_OK);
     CHECK(epaper_album_manage("{\"schema_version\":1,\"id\":\"world-new\"}",true,error,sizeof(error))==ESP_OK);
+    /* Selected photos: committed position, idempotence and disabled one-off state. */
+    _mkdir(".local/test-sd/albums/a");remove_directory(".local/test-sd/albums/unused");
+    copy_file(".local/test-sd/upload-fixture.bmp",".local/test-sd/albums/a/01.bmp");
+    copy_file(".local/test-sd/upload-fixture.bmp",".local/test-sd/albums/a/02.bmp");
+    copy_file(".local/test-sd/upload-fixture.bmp",".local/test-sd/albums/off/01.bmp");
+    copy_file(".local/test-sd/upload-fixture.bmp",".local/test-sd/albums/off/02.bmp");
+    FILE *different=fopen(".local/test-sd/albums/off/02.bmp","r+b");CHECK(different);CHECK(!fseek(different,54,SEEK_SET));
+    const unsigned char red[3]={0,0,255};CHECK(fwrite(red,1,3,different)==3);CHECK(!fclose(different));
+    text_file(".local/test-sd/config.json",global);
+    text_file(".local/test-sd/albums/albums.json","{\"schema_version\":1,\"playback\":{\"default_interval_seconds\":120},\"albums\":[{\"id\":\"a\",\"directory\":\"a\"},{\"id\":\"off\",\"directory\":\"off\",\"enabled\":false}]}");
+    reboot(false);CHECK(catalog->total==2);
+    const char *select_a="{\"schema_version\":1,\"album\":\"a\",\"name\":\"01.bmp\"}";
+    const char *select_off="{\"schema_version\":1,\"album\":\"off\",\"name\":\"02.bmp\"}";
+    CHECK(epaper_album_show_photo(select_a,error,sizeof(error))==ESP_OK);
+    CHECK(!strcmp(live.current_path,"/albums/a/01.bmp") && live.cursor[0]==1 && !manual_byte);
+    before=refreshes;original=deadline;saved=live;
+    CHECK(epaper_album_show_photo(select_a,error,sizeof(error))==ESP_OK);
+    CHECK(refreshes==before && deadline==original && !memcmp(&saved,&live,sizeof(live)));
+    const char *invalid_show[]={"{}","[]","null","{\"schema_version\":1,\"album\":\"a\",\"name\":\"../01.bmp\"}",
+        "{\"schema_version\":1,\"album\":\"none\",\"name\":\"01.bmp\"}","{\"schema_version\":1,\"album\":\"a\",\"name\":\"missing.bmp\"}",
+        "{\"schema_version\":1,\"album\":\"a\",\"name\":\"01.bmp\",\"name\":\"02.bmp\"}",
+        "{\"schema_version\":1,\"album\":\"a\",\"name\":\"01.bmp\",\"extra\":1}",
+        "{\"schema_version\":1,\"album\":\"a\",\"name\":\"01.bmp\\u0000evil\"}",
+        "{\"schema_version\":1,\"album\":\"a\",\"name\":\"01.bmp\"} trailing"};
+    for(unsigned i=0;i<sizeof(invalid_show)/sizeof(invalid_show[0]);i++){CHECK(epaper_album_show_photo(invalid_show[i],error,sizeof(error))!=ESP_OK);CHECK(deadline==original && !memcmp(&saved,&live,sizeof(live)) && refreshes==before);}
+    char *manifest_before=NULL;CHECK(epaper_json_read(".local/test-sd/albums/albums.json",&manifest_before));
+    display_fail=true;CHECK(epaper_album_show_photo(select_off,error,sizeof(error))!=ESP_OK);display_fail=false;
+    CHECK(!memcmp(&saved,&live,sizeof(live)) && deadline==original && catalog->albums[1].count==0);
+    CHECK(epaper_album_show_photo(select_off,error,sizeof(error))==ESP_OK);
+    CHECK(manual_byte==1 && !strcmp(live.current_id,"off") && !catalog->config.albums[1].enabled && catalog->total==2 && deadline==clock_us+120000000);
+    CHECK(live.cursor[0]==saved.cursor[0] && live.active==saved.active);
+    char *manifest_after=NULL;CHECK(epaper_json_read(".local/test-sd/albums/albums.json",&manifest_after));CHECK(!strcmp(manifest_before,manifest_after));free(manifest_before);free(manifest_after);
+    before=refreshes;original=deadline;clock_us+=10000000;reboot(true);CHECK(refreshes==before && deadline==original && manual_byte==1 && !strcmp(live.current_id,"off"));
+    CHECK(epaper_album_rescan()==ESP_OK && deadline==original && refreshes==before && !strcmp(live.current_id,"off"));
+    CHECK(epaper_album_manage("{\"schema_version\":1,\"id\":\"unused\",\"enabled\":false}",false,error,sizeof(error))==ESP_OK);
+    CHECK(refreshes==before && !strcmp(live.current_id,"off") && deadline==original);
+    CHECK(epaper_album_rename("{\"schema_version\":1,\"id\":\"off\",\"directory\":\"off-renamed\"}",error,sizeof(error))==ESP_OK);
+    CHECK(strstr(live.current_path,"/off-renamed/02.bmp") && refreshes==before && deadline==original);
+    reboot(false);CHECK(!strcmp(live.current_id,"off") && strstr(live.current_path,"/off-renamed/02.bmp") && manual_byte==1);
+    CHECK(epaper_album_rename("{\"schema_version\":1,\"id\":\"off\",\"directory\":\"off\"}",error,sizeof(error))==ESP_OK);
+    clock_us=deadline;CHECK(epaper_album_due());
+    CHECK(epaper_album_next()==ESP_OK && !strcmp(live.current_path,"/albums/a/02.bmp") && !manual_byte);
+
+    player_write_fail=true;CHECK(epaper_album_show_photo(select_off,error,sizeof(error))!=ESP_OK);player_write_fail=false;
+    CHECK(strstr(error,"Photo displayed") && !strcmp(live.current_id,"off") && catalog->albums[1].count==1 && dirty_byte);
+    CHECK(epaper_album_show_photo(select_off,error,sizeof(error))==ESP_OK && !dirty_byte && manual_byte==1);
+
+    CHECK(epaper_album_show_photo(select_off,error,sizeof(error))==ESP_OK);
+    CHECK(!remove(".local/test-sd/albums/off/02.bmp"));CHECK(epaper_album_rescan()==ESP_OK && !strcmp(live.current_id,"a") && !manual_byte);
+    CHECK(epaper_album_show_photo("{\"schema_version\":1,\"album\":\"off\",\"name\":\"01.bmp\"}",error,sizeof(error))==ESP_OK);
+    CHECK(epaper_album_settings("{\"schema_version\":1,\"album_ids\":[\"a\"]}",error,sizeof(error))==ESP_OK);
+    CHECK(!strcmp(live.current_id,"a") && !manual_byte);
+    /* Re-select an invalid disabled photo without changing the prior selection. */
+    text_file(".local/test-sd/albums/off/bad.bmp","not a BMP");saved=live;original=deadline;before=refreshes;
+    CHECK(epaper_album_show_photo("{\"schema_version\":1,\"album\":\"off\",\"name\":\"bad.bmp\"}",error,sizeof(error))!=ESP_OK);
+    CHECK(!memcmp(&saved,&live,sizeof(live)) && deadline==original && refreshes==before);
+    /* A manual image can be the only image, with no automatic timer. */
+    CHECK(!remove(".local/test-sd/albums/a/01.bmp"));CHECK(!remove(".local/test-sd/albums/a/02.bmp"));CHECK(epaper_album_rescan()==ESP_OK && catalog->total==0);
+    CHECK(epaper_album_show_photo("{\"schema_version\":1,\"album\":\"off\",\"name\":\"01.bmp\"}",error,sizeof(error))==ESP_OK);
+    CHECK(automatic_stopped && !epaper_album_due() && epaper_album_sleep_us()==0 && manual_byte==1);
+    before=refreshes;reboot(true);CHECK(refreshes==before && !strcmp(live.current_id,"off") && automatic_stopped);
+    CHECK(epaper_album_rescan()==ESP_OK && !strcmp(live.current_id,"off"));
+    CHECK(!remove(".local/test-sd/albums/off/01.bmp"));CHECK(!remove(".local/test-sd/albums/off/bad.bmp"));
+    CHECK(epaper_album_manage("{\"schema_version\":1,\"id\":\"unused\"}",true,error,sizeof(error))==ESP_OK);
+
     CHECK(!remove(".local/test-sd/upload-fixture.bmp"));
     epaper_catalog_free(catalog);free(catalog);free(frame);
     printf("runtime tests: %u checks passed\n",checks);return 0;

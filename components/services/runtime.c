@@ -41,10 +41,12 @@ static uint64_t full_interval(void)
 
 static esp_err_t persist(void)
 {
+    for(unsigned a=0;a<catalog->config.album_count;a++)if(!catalog->albums[a].definition.enabled){live.cursor[a]=0;live.previous[a]=UINT32_MAX;}
     epaper_player_t old;size_t size=sizeof(old);
     if(!dirty && nvs_get_blob(store,"player",&old,&size)==ESP_OK && size==sizeof(old) &&
        !memcmp(&old,&live,size)) return ESP_OK;
     esp_err_t err=nvs_set_blob(store,"player",&live,sizeof(live));
+    if(err==ESP_OK) err=nvs_set_u8(store,"manual",live.current_album<catalog->config.album_count && !catalog->albums[live.current_album].definition.enabled);
     if(err==ESP_OK) err=nvs_set_u8(store,"dirty",0);
     if(err==ESP_OK) err=nvs_commit(store);
     if(err==ESP_OK) dirty=false;
@@ -164,6 +166,56 @@ static bool decode(unsigned album,unsigned photo,uint32_t *hash)
     if(!ok) ESP_LOGW(TAG,"Skipping unreadable or invalid six-color BMP: %s",path);
     return ok;
 }
+/* A disabled album may cache one displayed file, without entering its deck in
+   automatic playback or increasing the enabled-photo count/fingerprint. */
+static esp_err_t cache_manual(epaper_catalog_t *c,unsigned album,const char *name)
+{
+    char path[EPAPER_PATH_MAX];epaper_bmp_info_t info;
+    if(!epaper_album_file_path(EPAPER_SD_MOUNT,&c->config,c->albums[album].definition.id,name,path,sizeof(path)))return ESP_ERR_INVALID_ARG;
+    FILE *f=fopen(path,"rb");if(!f)return ESP_ERR_NOT_FOUND;
+    bool valid=epaper_bmp_inspect(f,c->config.rotation,&info);fclose(f);
+    if(!valid)return ESP_ERR_INVALID_RESPONSE;
+    epaper_photo_t *photo=calloc(1,sizeof(*photo));uint16_t *deck=malloc(sizeof(*deck));
+    if(!photo || !deck){free(photo);free(deck);return ESP_ERR_NO_MEM;}
+    strcpy(photo->name,name);*deck=0;
+    epaper_index_t *index=&c->albums[album];free(index->photos);free(index->deck);
+    index->photos=photo;index->deck=deck;index->count=1;return ESP_OK;
+}
+static bool manual_displayed(void)
+{return live.current_album<catalog->config.album_count && !catalog->albums[live.current_album].definition.enabled;}
+static esp_err_t restore_manual(epaper_catalog_t *c,const epaper_player_t *identity)
+{
+    if(!identity || identity->magic!=EPAPER_PLAYER_MAGIC ||
+       !memchr(identity->current_id,0,sizeof(identity->current_id)) || !memchr(identity->current_path,0,sizeof(identity->current_path)))return ESP_OK;
+    const char *name=strrchr(identity->current_path,'/');if(!name || !epaper_photo_name_valid(++name))return ESP_OK;
+    for(unsigned a=0;a<c->config.album_count;a++)if(!c->albums[a].definition.enabled && !strcmp(c->albums[a].definition.id,identity->current_id)) {
+        char path[EPAPER_PATH_MAX];
+        if(!epaper_album_file_path("",&c->config,identity->current_id,name,path,sizeof(path)) || strcmp(path,identity->current_path))return ESP_OK;
+        esp_err_t err=cache_manual(c,a,name);return err==ESP_ERR_NO_MEM?err:ESP_OK;
+    }
+    return ESP_OK;
+}
+static bool restore_live(epaper_catalog_t *c,epaper_player_t *trial,const epaper_player_t *identity)
+{
+    if(!epaper_player_restore(c,trial,identity))return false;
+    if(!manual_displayed() || c->config.shuffle!=catalog->config.shuffle || c->config.strategy!=catalog->config.strategy)return true;
+    /* A one-off photo must not consume the paused queue when disabled folders
+       are renamed/added. Match enabled decks by stable ID and sorted filenames. */
+    for(unsigned a=0;a<c->config.album_count;a++)if(c->albums[a].definition.enabled) {
+        for(unsigned b=0;b<catalog->config.album_count;b++) {
+            const epaper_index_t *old=&catalog->albums[b],*next=&c->albums[a];
+            if(!old->definition.enabled || strcmp(old->definition.id,next->definition.id) || old->count!=next->count)continue;
+            bool same=live.cursor[b]<=old->count && (live.previous[b]==UINT32_MAX || live.previous[b]<old->count);
+            for(size_t p=0;p<old->count && same;p++)same=!strcmp(old->photos[p].name,next->photos[p].name);
+            if(same){trial->seeds[a]=live.seeds[b];trial->cursor[a]=live.cursor[b];trial->previous[a]=live.previous[b];}
+        }
+    }
+    for(unsigned offset=0;offset<catalog->config.album_count;offset++) {
+        unsigned old=(live.active+offset)%catalog->config.album_count;
+        for(unsigned a=0;a<c->config.album_count;a++)if(!strcmp(c->albums[a].definition.id,catalog->albums[old].definition.id)) {trial->active=a;return true;}
+    }
+    return true;
+}
 static esp_err_t show(epaper_player_t *trial,unsigned album,unsigned photo,uint32_t hash,bool force)
 {
     if(force || dirty || live.current_album==UINT32_MAX || hash!=live.image_hash) {
@@ -176,7 +228,7 @@ static esp_err_t show(epaper_player_t *trial,unsigned album,unsigned photo,uint3
     } else ESP_LOGI(TAG,"Preserving identical retained pixels; no refresh");
     epaper_player_commit(catalog,trial,album,photo,hash);live=*trial;
     esp_err_t err=persist();
-    deadline=now_us()+full_interval();retry_at=0;automatic_stopped=false;
+    deadline=now_us()+full_interval();retry_at=0;automatic_stopped=!catalog->total;
     ESP_LOGI(TAG,"DISPLAYED album=%s file=%s interval=%"PRIu32" next_in=%.1f seconds",
         live.current_id,live.current_path,catalog->albums[album].definition.interval,full_interval()/1000000.0);
     return err;
@@ -210,6 +262,8 @@ esp_err_t epaper_album_start(bool deep_wake)
     uint8_t dirty_value=1;
     nvs_get_u8(store,"dirty",&dirty_value);dirty=dirty_value!=0;
     initialized=true;
+    uint8_t saved_manual=0;nvs_get_u8(store,"manual",&saved_manual);
+    if(has_saved && saved_manual && restore_manual(catalog,&saved)!=ESP_OK)return ESP_ERR_NO_MEM;
     bool restored=(catalog->config.resume || deep_wake) && has_saved && epaper_player_restore(catalog,&live,&saved);
     if(restored) {
         uint32_t hash;
@@ -246,6 +300,48 @@ esp_err_t epaper_album_next(void)
     automatic_stopped=true;
     ESP_LOGW(TAG,"No valid photos remain; keeping the existing screen and stopping automatic refresh");
     return ESP_ERR_NOT_FOUND;
+}
+esp_err_t epaper_album_show_photo(const char *request,char *error,size_t size)
+{
+    if(!initialized)return ESP_ERR_INVALID_STATE;
+    cJSON *doc=request?cJSON_ParseWithOpts(request,NULL,true):NULL;unsigned seen=0;bool valid=cJSON_IsObject(doc) && !strstr(request,"\\u0000");
+    for(const cJSON *f=doc?doc->child:NULL;f && valid;f=f->next) {
+        unsigned bit=!strcmp(f->string,"schema_version")?1:!strcmp(f->string,"album")?2:!strcmp(f->string,"name")?4:0;
+        if(!bit || (seen&bit))valid=false;else seen|=bit;
+    }
+    const cJSON *schema=cJSON_GetObjectItemCaseSensitive(doc,"schema_version"),*album=cJSON_GetObjectItemCaseSensitive(doc,"album"),*name=cJSON_GetObjectItemCaseSensitive(doc,"name");
+    valid=valid && seen==7 && cJSON_IsNumber(schema) && schema->valuedouble==1 && cJSON_IsString(album) && cJSON_IsString(name) && epaper_photo_name_valid(name->valuestring);
+    if(!valid){snprintf(error,size,"Use schema_version 1, album and a safe BMP name");cJSON_Delete(doc);return ESP_ERR_INVALID_ARG;}
+    unsigned a=0;while(a<catalog->config.album_count && strcmp(catalog->albums[a].definition.id,album->valuestring))a++;
+    if(a==catalog->config.album_count){snprintf(error,size,"Unknown album");cJSON_Delete(doc);return ESP_ERR_NOT_FOUND;}
+    epaper_player_t trial=live;
+    if(!epaper_player_valid(catalog,&live)){epaper_player_init(catalog,&trial,esp_random());epaper_player_restore(catalog,&trial,&live);}
+    epaper_index_t previous=catalog->albums[a];bool manual=!previous.definition.enabled;unsigned p=0;esp_err_t err=ESP_OK;
+    if(manual) {
+        catalog->albums[a].photos=NULL;catalog->albums[a].deck=NULL;catalog->albums[a].count=0;
+        err=cache_manual(catalog,a,name->valuestring);
+    } else {
+        while(p<previous.count && strcmp(previous.photos[p].name,name->valuestring))p++;
+        if(p==previous.count)err=ESP_ERR_NOT_FOUND;
+    }
+    uint32_t hash=0;
+    if(err==ESP_OK && !decode(a,p,&hash))err=ESP_ERR_INVALID_RESPONSE;
+    char path[EPAPER_PATH_MAX]={0};bool applied=false;
+    if(err==ESP_OK) {
+        epaper_photo_path("",catalog,a,p,path,sizeof(path));
+        if(!dirty && !strcmp(live.current_id,album->valuestring) && !strcmp(live.current_path,path) && live.image_hash==hash)applied=true;
+        else {
+            if(!manual && !epaper_player_select(catalog,&trial,a,p))err=ESP_FAIL;
+            else {err=show(&trial,a,p,hash,false);applied=!strcmp(live.current_path,path) && live.image_hash==hash;}
+        }
+        if(applied)catalog->albums[a].photos[p].bad=false;
+    }
+    if(manual) {
+        if(applied){free(previous.photos);free(previous.deck);}
+        else {free(catalog->albums[a].photos);free(catalog->albums[a].deck);catalog->albums[a]=previous;}
+    }
+    if(err!=ESP_OK)snprintf(error,size,applied?"Photo displayed; state save failed: %s":"Photo not displayed: %s",esp_err_to_name(err));
+    cJSON_Delete(doc);return err;
 }
 esp_err_t epaper_display_bmp(const char *path)
 { (void)path;return ESP_ERR_NOT_SUPPORTED; /* Prevent bypassing persistent album state. */ }
@@ -311,12 +407,14 @@ esp_err_t epaper_album_rescan(void)
     if(!epaper_catalog_scan(EPAPER_SD_MOUNT,&catalog->config,replacement,error,sizeof(error))) {
         free(replacement);return ESP_FAIL;
     }
+    if(manual_displayed() && restore_manual(replacement,&live)!=ESP_OK){epaper_catalog_free(replacement);free(replacement);return ESP_ERR_NO_MEM;}
     epaper_player_t trial;epaper_player_init(replacement,&trial,esp_random());
-    bool restored=epaper_player_restore(replacement,&trial,&live);
+    bool restored=restore_live(replacement,&trial,&live);
     epaper_catalog_t *old=catalog;catalog=replacement;
     epaper_catalog_free(old);free(old);
     if(!catalog->total) {
         /* Keep the displayed identity for status; there is nothing to advance to. */
+        if(restored){live=trial;automatic_stopped=true;retry_at=0;return dirty?ESP_OK:persist();}
         live.current_album=live.current_photo=UINT32_MAX;automatic_stopped=true;retry_at=0;
         ESP_LOGI(TAG,"File index empty; keeping current pixels and stopping automatic playback");
         return ESP_OK;
@@ -384,6 +482,7 @@ esp_err_t epaper_album_settings(const char *request,char *error,size_t size)
     uint32_t night_start=config->night_start,night_end=config->night_end;
     cJSON *edit=cJSON_Parse(request);
     if(!edit) {err=ESP_ERR_NO_MEM;goto end;}
+    bool selection_request=cJSON_HasObjectItem(edit,"album_ids");
     bool night_request=cJSON_HasObjectItem(edit,"night_pause") && !cJSON_HasObjectItem(edit,"album_ids") && !cJSON_HasObjectItem(edit,"interval_seconds");
     cJSON_Delete(edit);
     config->night_enabled=catalog->config.night_enabled;
@@ -399,13 +498,14 @@ esp_err_t epaper_album_settings(const char *request,char *error,size_t size)
     if(!epaper_catalog_scan(EPAPER_SD_MOUNT,config,replacement,error,size)) goto end;
     if(!replacement->total) {snprintf(error,size,"Selected albums contain no valid photos");goto end;}
     /* Validate and build the replacement before touching disk or live playback. */
+    if(!selection_request && manual_displayed() && restore_manual(replacement,&live)!=ESP_OK){err=ESP_ERR_NO_MEM;goto end;}
     if(!epaper_json_replace(path,output)) {snprintf(error,size,"Cannot save SD configuration; playback unchanged");goto end;}
     cache_save(global,output);
     epaper_player_t trial;epaper_player_init(replacement,&trial,esp_random());
-    bool restored=epaper_player_restore(replacement,&trial,&live);
+    bool restored=restore_live(replacement,&trial,&live);
     epaper_catalog_t *old=catalog;catalog=replacement;replacement=old;
     live=trial;automatic_stopped=false;retry_at=0;
-    if(restored) {deadline=now_us()+full_interval();err=persist();}
+    if(restored) {if(catalog->albums[live.current_album].definition.enabled)deadline=now_us()+full_interval();err=persist();}
     else err=epaper_album_next();
     if(err!=ESP_OK) snprintf(error,size,"Settings saved; display/state update failed: %s",esp_err_to_name(err));
     else ESP_LOGI(TAG,"Web settings saved to SD; selected albums applied");
@@ -441,16 +541,17 @@ esp_err_t epaper_album_rename(const char *request,char *error,size_t size)
     journal_ready=true;
     if(rename(old_path,new_path)){snprintf(error,size,"Cannot rename album folder");goto end;}moved=true;
     if(!epaper_catalog_scan(EPAPER_SD_MOUNT,config,replacement,error,size))goto end;
-    if(!epaper_json_replace(manifest_path,output)){snprintf(error,size,"Cannot save album manifest");goto end;}saved=true;cache_save(global,output);
     /* Same album ID and image bytes: remap the displayed path, retain deadline. */
     epaper_player_t identity=live,trial;
     if(!strcmp(identity.current_id,id)) {
         const char *name=strrchr(identity.current_path,'/');
         if(name){char filename[256];snprintf(filename,sizeof(filename),"%s",name+1);epaper_album_file_path("",config,id,filename,identity.current_path,sizeof(identity.current_path));}
     }
-    epaper_player_init(replacement,&trial,esp_random());bool restored=epaper_player_restore(replacement,&trial,&identity);
+    if(manual_displayed() && restore_manual(replacement,&identity)!=ESP_OK){err=ESP_ERR_NO_MEM;goto end;}
+    if(!epaper_json_replace(manifest_path,output)){snprintf(error,size,"Cannot save album manifest");goto end;}saved=true;cache_save(global,output);
+    epaper_player_init(replacement,&trial,esp_random());bool restored=restore_live(replacement,&trial,&identity);
     epaper_catalog_t *old_catalog=catalog;catalog=replacement;replacement=old_catalog;live=trial;
-    if(!catalog->total){automatic_stopped=true;err=ESP_OK;}
+    if(!catalog->total){automatic_stopped=true;err=restored&&!dirty?persist():ESP_OK;}
     else {automatic_stopped=false;err=restored?(dirty?ESP_OK:persist()):epaper_album_next();}
     if(err!=ESP_OK)snprintf(error,size,"Folder renamed; display/state update failed: %s",esp_err_to_name(err));
 end:
@@ -495,13 +596,15 @@ esp_err_t epaper_album_manage(const char *request,bool deleting,char *error,size
         directory_changed=true;
     }
     if(!epaper_catalog_scan(EPAPER_SD_MOUNT,config,replacement,error,size)) goto end;
+    if(manual_displayed() && restore_manual(replacement,&live)!=ESP_OK){err=ESP_ERR_NO_MEM;goto end;}
     if(!epaper_json_replace(manifest_path,output)) {snprintf(error,size,"Cannot save album manifest");goto end;}
     saved=true;cache_save(global,output);
     epaper_player_t trial;epaper_player_init(replacement,&trial,esp_random());
-    bool restored=epaper_player_restore(replacement,&trial,&live);
+    bool restored=restore_live(replacement,&trial,&live);
     epaper_catalog_t *old=catalog;catalog=replacement;replacement=old;
     if(!catalog->total) {
-        live.current_album=live.current_photo=UINT32_MAX;automatic_stopped=true;retry_at=0;err=ESP_OK;
+        if(restored)live=trial;else live.current_album=live.current_photo=UINT32_MAX;
+        automatic_stopped=true;retry_at=0;err=restored&&!dirty?persist():ESP_OK;
     } else {
         live=trial;automatic_stopped=false;retry_at=0;
         err=restored?(dirty?ESP_OK:persist()):epaper_album_next();

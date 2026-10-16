@@ -85,6 +85,7 @@ bool epaper_photo_path(const char *mount,const epaper_catalog_t *catalog,
 void epaper_player_init(epaper_catalog_t *catalog,epaper_player_t *player,uint32_t seed);
 bool epaper_player_restore(epaper_catalog_t *catalog,epaper_player_t *player,const epaper_player_t *saved);
 bool epaper_player_pick(epaper_catalog_t *catalog,epaper_player_t *trial,unsigned *album,unsigned *photo);
+bool epaper_player_select(epaper_catalog_t *catalog,epaper_player_t *trial,unsigned album,unsigned photo);
 void epaper_player_commit(epaper_catalog_t *catalog,epaper_player_t *trial,unsigned album,unsigned photo,uint32_t hash);
 bool epaper_player_valid(const epaper_catalog_t *catalog,const epaper_player_t *player);
 

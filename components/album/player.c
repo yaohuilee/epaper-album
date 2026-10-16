@@ -78,7 +78,7 @@ bool epaper_player_pick(epaper_catalog_t *c,epaper_player_t *s,unsigned *album,u
     for(unsigned searched=0;searched<c->config.album_count;searched++) {
         unsigned a=s->active%c->config.album_count;
         epaper_index_t *index=&c->albums[a];
-        if(index->count) {
+        if(index->definition.enabled && index->count) {
             /* Recreate each deck so an uncommitted trial cannot affect live state. */
             start_deck(c,s,a);
             if(s->cursor[a]>=index->count) {
@@ -95,6 +95,17 @@ bool epaper_player_pick(epaper_catalog_t *c,epaper_player_t *s,unsigned *album,u
             }
         }
         s->active=(a+1)%c->config.album_count;
+    }
+    return false;
+}
+bool epaper_player_select(epaper_catalog_t *c,epaper_player_t *s,unsigned album,unsigned photo)
+{
+    if(album>=c->config.album_count || !c->albums[album].definition.enabled || photo>=c->albums[album].count)return false;
+    start_deck(c,s,album);
+    for(size_t i=0;i<c->albums[album].count;i++)if(c->albums[album].deck[i]==photo) {
+        s->cursor[album]=(uint32_t)i+1;
+        s->active=(c->config.strategy==ALBUM_ROUND_ROBIN || s->cursor[album]>=c->albums[album].count)?(album+1)%c->config.album_count:album;
+        return true;
     }
     return false;
 }

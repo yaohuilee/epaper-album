@@ -112,6 +112,8 @@ static void next(epaper_catalog_t *c,epaper_player_t *s,unsigned want_a,unsigned
 {unsigned a,p;CHECK(epaper_player_pick(c,s,&a,&p));CHECK(a==want_a && p==want_p);epaper_player_commit(c,s,a,p,42);CHECK(epaper_player_valid(c,s));}
 static void player_tests(void)
 {
+    remove(".local/test-sd/albums/a/01.bmp");remove(".local/test-sd/albums/a/02.bmp");
+    remove(".local/test-sd/albums/off/01.bmp");remove(".local/test-sd/albums/off/02.bmp");remove(".local/test-sd/albums/off/bad.bmp");
     remove(".local/test-sd/albums/a/30.bmp");remove(".local/test-sd/albums/b/4.bmp");
     _mkdir(".local/test-sd");_mkdir(".local/test-sd/albums");_mkdir(".local/test-sd/albums/a");
     _mkdir(".local/test-sd/albums/b");_mkdir(".local/test-sd/albums/off");_mkdir(".local/test-sd/albums/a/nested");
@@ -124,6 +126,22 @@ static void player_tests(void)
     CHECK(epaper_catalog_scan(".local/test-sd",config,c,error,sizeof(error)));
     CHECK(c->total==5 && c->albums[0].count==2 && c->albums[2].count==0);
     CHECK(!strcmp(c->albums[0].photos[0].name,"2.BMP"));
+    /* Direct selection follows the current ordered/shuffled deck. */
+    epaper_player_t chosen;epaper_strategy_t strategy=c->config.strategy;bool shuffle=c->config.shuffle;
+    for(unsigned shuffled=0;shuffled<2;shuffled++)for(unsigned seed=1;seed<=20;seed++)for(unsigned selected=0;selected<2;selected++) {
+        c->config.shuffle=shuffled!=0;c->config.strategy=ALBUM_BY_ALBUM;epaper_player_init(c,&chosen,seed);
+        CHECK(epaper_player_select(c,&chosen,0,selected));CHECK(chosen.cursor[0]>=1 && chosen.cursor[0]<=2);
+        CHECK(c->albums[0].deck[chosen.cursor[0]-1]==selected);
+        unsigned expected=chosen.cursor[0]<2?c->albums[0].deck[chosen.cursor[0]]:UINT32_MAX;
+        epaper_player_commit(c,&chosen,0,selected,42);CHECK(epaper_player_valid(c,&chosen));
+        unsigned album,photo;CHECK(epaper_player_pick(c,&chosen,&album,&photo));
+        CHECK(expected==UINT32_MAX?album==1:album==0 && photo==expected);
+    }
+    c->config.shuffle=false;c->config.strategy=ALBUM_ROUND_ROBIN;epaper_player_init(c,&chosen,123);
+    CHECK(epaper_player_select(c,&chosen,0,0));CHECK(chosen.active==1);
+    epaper_player_t unchanged=chosen;CHECK(!epaper_player_select(c,&chosen,2,0));CHECK(!epaper_player_select(c,&chosen,0,2));CHECK(!memcmp(&chosen,&unchanged,sizeof(chosen)));
+    c->config.shuffle=shuffle;c->config.strategy=strategy;
+
     epaper_player_t s;epaper_player_init(c,&s,123);
     next(c,&s,0,0);next(c,&s,0,1);next(c,&s,1,0);next(c,&s,1,1);next(c,&s,1,2);next(c,&s,0,0);
     epaper_player_t saved=s,restored;epaper_player_init(c,&restored,456);
