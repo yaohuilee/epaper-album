@@ -39,7 +39,7 @@ SD传输、配置写入、图片解码和显示通过共享锁互斥，禁止访
 
 ## 原图自动转换（0.17.0）
 
-`PUT /api/upload?album=ID&name=原图.jpg`：带控制令牌和 `Content-Length`，直接发送 JPEG 或24位 BI_RGB BMP 字节，不使用 multipart。接受54字节至16 MiB，边长不超过12000像素、总像素不超过4000万。JPEG支持基线彩色/灰度及 EXIF 方向，拒绝渐进式、CMYK、损坏文件。BMP支持正/负高度。尺寸、裁剪及六色约定见[照片格式](image-format.md)。
+`PUT /api/upload?album=ID&name=原图.jpg`：带控制令牌和 `Content-Length`，直接发送 JPEG 或24位 BI_RGB BMP 字节，不使用 multipart。0.17.1 起接受54字节至8 MiB（8388608字节，含上限），超出返回413 `upload_limit`。边长不超过12000像素、总像素不超过4000万。JPEG支持基线彩色/灰度及 EXIF 方向，拒绝渐进式、CMYK、损坏文件。BMP支持正/负高度。尺寸、裁剪及六色约定见[照片格式](image-format.md)。
 
 原图收齐后返回202及 `job_id/name/state`，后台转换、校验、发布并索引。输出同名主体的 `.bmp`，不能覆盖现有文件。网络接收预算100秒，socket 超时20秒；没有断点续传。上传接收时 HTTP 服务一次处理一个请求，其他请求可能等待。客户端遇到不确定的网络超时，先查询任务和文件列表，不能直接重复上传。
 

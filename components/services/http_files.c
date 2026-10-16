@@ -248,7 +248,7 @@ static esp_err_t import_photo(httpd_req_t *req)
 {
     if(!epaper_http_authorized(req))return denied(req);
     if(req->method==HTTP_GET){cJSON *doc=cJSON_CreateObject();if(doc){epaper_image_json(doc);cJSON_AddBoolToObject(doc,"can_upload",!epaper_image_active()&&epaper_http_file_available(120));}return json_response(req,"200 OK",doc);}
-    if(req->content_len<54 || req->content_len>16u*1024u*1024u)return error_response(req,"413 Content Too Large","upload_limit","Source photo must be 54 bytes to 16 MiB");
+    if(req->content_len<54 || req->content_len>8u*1024u*1024u)return error_response(req,"413 Content Too Large","upload_limit","Source photo must be 54 bytes to 8 MiB");
     query_t q;char name[256],target[EPAPER_PATH_MAX],source[EPAPER_PATH_MAX],error[160]={0};
     if(!query(req,true,&q) || !epaper_image_upload_name(q.name,name,sizeof(name)))return error_response(req,"400 Bad Request","bad_query","Use a safe JPEG or BMP filename");
     if(epaper_image_active() || !epaper_http_file_available(120) || !epaper_http_file_begin_for(120))return busy(req);
