@@ -1,94 +1,70 @@
-# 配置文件约定（schema v1）
+# Configuration (schema v1)
 
-[文档首页](README.md) · [项目首页](../README.md)
+English | [简体中文](zh-CN/configuration.md) · [Documentation](README.md)
 
-相册、Wi-Fi、校时和离线报时已实现；声音活动和低电量自动策略为预留规格，不能启用。当前支持范围见[项目首页](../README.md)，计划见[后续计划](roadmap.md)。
+`/config.json` at the SD root holds global device settings. `/albums/albums.json` holds album selection and playback settings. The global configuration may select a different album root/manifest. Runtime state is stored in NVS, not written into user configuration. Web settings update their corresponding SD file independently.
 
-两份文件职责互不重叠：SD 根目录 `/config.json` 保存设备全局设置；相册根目录 `/albums/albums.json` 保存相册名单和播放设置。相册根目录可由全局配置修改。运行状态保存于NVS，不写回用户配置。网页设置操作会分别更新对应的SD配置文件。
+Paths are relative to the SD filesystem; do not include the firmware mount point `/sdcard`. JSON is UTF-8 without comments or trailing commas. Start from [templates](../sdcard/).
 
-所有路径均相对于 SD 卡文件系统；固件内挂载点 `/sdcard` 不出现在配置中。JSON 使用 UTF-8，不接受注释或尾逗号。
+## Album rules
 
-## 相册规则
+- Only explicitly listed `enabled: true` albums play. Creating a directory does not enable it.
+- `directory` is relative to the album root; absolute paths, `..` and duplicate IDs are rejected.
+- `recursive` is currently false. Direct BMP children are scanned; a nested grouping needs another explicit album entry.
+- `.bmp` matching is case-insensitive. Natural filename sorting puts 2 before 10.
+- `order` is `sequential` or `shuffle`. A shuffled round has no repeats; the first image of a new round differs from the previous last image when more than one exists.
+- `album_strategy` defaults to `album_by_album`: finish an enabled album, then advance in manifest order. `round_robin` takes one photo from each enabled album, maintaining each cursor independently.
+- Each photo uses its album's `interval_seconds`, falling back to `playback.default_interval_seconds`. Timing starts after refresh completion, excluding the roughly 30-second refresh.
+- Recommended interval: 900 seconds. Accepted range: 120–604800 seconds.
+- Empty albums and bad images are skipped. If no valid images remain, keep the current screen and stop automatic refresh.
+- Recovery uses stable album ID and relative photo path, not an obsolete array index.
 
-- 仅播放清单中 `enabled: true` 的目录；新增子目录不会自动开放播放。
-- `directory` 必须为相册根目录下的相对路径，拒绝绝对路径、`..` 和重复 ID。
-- 当前 `recursive: false`，只扫描对应目录的直接 BMP 文件；子目录作为另一个显式相册配置。
-- 大小写不敏感识别 `.bmp`；按文件名自然排序（2 在 10 前），同名比较使用固定规则。
-- `order` 支持 `sequential` 和 `shuffle`；随机播放在每轮中不重复，下一轮避免第一张等于上一轮最后一张（仅一张时除外）。
-- `album_strategy` 默认 `album_by_album`：按照清单中的相册顺序，播完一个启用相册的全部有效照片，再进入下一个；全部相册播完后循环。保留 `round_robin` 选项，启用相册依次各播一张，每个相册维护自己的播放位置。
-- 每张图的停留时长使用该相册 `interval_seconds`，缺省使用 `playback.default_interval_seconds`。从刷新完成开始计算，不把约 30 秒刷新时间算进停留时间。
-- 建议 900 秒；当前最小允许 120 秒，太小的值拒绝加载，防止持续刷屏。
-- 空相册、损坏图片跳过；所有相册无有效照片时保留屏幕原图，停止自动刷新并提供按键/串口诊断。
-- 恢复位置以相册 ID 和相对文件路径记录；照片删除或清单变化后重新定位，不能盲用旧数组索引。
+### Night pause
 
-### 夜间暂停
-
-`playback.night_pause` 保存在相册清单中，网页“播放设置 → 夜间暂停 → 设置”可独立保存。
+Stored as `playback.night_pause` in the manifest; saved separately in the web page:
 
 ```json
 "night_pause": {"enabled": false, "start": "22:00", "end": "06:00"}
 ```
 
-旧配置缺省关闭，起止时间预设22:00和06:00。时间为设备时间，使用严格的24小时 `HH:mm`，不能相同。开始时刻包含在暂停区间内，结束时刻不包含；开始时间早于结束时间表示当天时段，晚于结束时间表示跨午夜。网页提供15分钟间隔的时间选择；已有其他分钟值原样保留，配置文件和API仍接受合法的分钟值。
+Older configurations default off. Times are strict device-time `HH:mm`; start and end must differ. The start is inclusive and the end exclusive. Start before end is same-day; start after end crosses midnight. The UI offers 15-minute steps but retains existing off-grid values. The API/file accepts valid individual minutes.
 
-暂停期间不发起自动换图，保留当前画面；手动换图、首次显示和错误恢复仍可进行，已开始的刷新不会中断。到结束时刻，若换图截止时间已过，只换一次；尚未到期则继续等待原截止时间。单独保存夜间设置不改照片、相册选择或当前截止时间。电池供电的定时唤醒会跳过暂停区间，仍可因校时或按键唤醒。系统时间未设置时不执行夜间暂停。
+The pause prevents new automatic changes. Manual, initial and recovery displays still run; an existing refresh is not interrupted. At the end, change once if overdue, otherwise retain the original deadline. Saving pause settings alone does not change the photo, selection or deadline. Battery wake scheduling skips paused photo deadlines but can still wake for time sync or buttons. Invalid system time disables night pause.
 
-### 多相册播放顺序
+### Ordering and manual changes
 
-默认 `album_by_album`，例如家人相册两张、旅行相册三张：
+For album-by-album, two family photos and three travel photos play `family1 → family2 → travel1 → travel2 → travel3 → family1`. Disabled/empty albums are skipped. Shuffle changes within-album order, not album order. Round-robin repeats smaller albums more often.
 
-```text
-家人1 → 家人2 → 旅行1 → 旅行2 → 旅行3 → 家人1 → …
-```
+BOOT advances by the active strategy. A successful manual change starts a full interval at refresh completion, replacing the old deadline. Failed validation or refresh does not commit the new photo or reset timing. A sole valid photo is not repeatedly refreshed; a manual operation may restart its interval.
 
-相册顺序由 `albums` 数组确定；禁用或无有效照片的相册跳过。`order` 只控制相册内部照片的顺序，不打乱相册顺序。随机模式中，每个相册本轮有效照片全部播完才切换相册，下轮重新生成该相册的随机顺序。
+### Restart and deep-sleep recovery
 
-`round_robin` 为可选策略，小相册完成一轮后自行循环，因此照片数量少的相册会更频繁地重复。每张照片的停留时间始终取当前照片所属相册的设置。
+With `resume_position: true`, recover the last successfully shown ID/path. If the retained screen matches saved state, do not refresh it again. An interrupted/uncertain display is refreshed before timing resumes. A full restart starts a new full interval; it does not catch up for time powered off. Deleted, disabled or invalid saved positions fall back to the first valid selection. With no valid selection, retain screen pixels and stop automatic changes. `resume_position: false` starts from the first valid photo.
 
-### 手动换图与计时
+Normal timer/button deep-sleep wake retains the original deadline. Otherwise periodic wakeups would continually postpone playback. Cross-restart shuffle recovery also stores the seed/order cursor; a photo path alone cannot restore a shuffled round.
 
-BOOT 短按按当前播放策略推进到下一张；手动换图成功后，从刷新完成时刻重新计算一个完整停留间隔，取消原有自动换图截止时间。例如原图还剩一分钟、下一张设置为15分钟，手动切换成功后新图停留15分钟，再自动推进。
+## Global settings
 
-图片校验或刷新失败不更新“已显示照片”位置，也不因失败重置计时。仅一张有效照片时，不重复刷新同图；手动操作可重新开始该图的停留计时。
-
-### 断电与重启恢复
-
-`resume_position: true` 时恢复最后一次成功显示的相册 ID 和照片路径；若电子纸保留的画面与已保存状态一致，可直接保留，不重复刷新。若状态不确定（例如此前刷新中断），重新显示已保存照片，成功后开始计时。
-
-完整重启或关机后开机，不恢复上次剩余停留时间：恢复照片后开始一个新的完整间隔；保留原图时从恢复完成开始计时，重新刷图时从刷新完成开始计时。不根据关机时长追补换图，也不快速跳过多张照片。
-
-如果保存的照片已删除、所在相册被禁用，或配置变化使其不再有效，回退到当前清单中的第一张有效照片；全部无有效照片则保留屏幕原图、停止自动刷新。`resume_position: false` 时开机从清单第一张有效照片开始，同样使用新的完整间隔。
-
-正常定时深睡唤醒须保留原自动换图截止时间，不采用上述完整重启的计时重置规则；否则周期唤醒会不断延后换图。随机播放若需跨完整重启维持本轮不重复，还须保存本轮顺序或随机种子与游标；只保存当前照片路径不足以恢复随机队列。
-
-以上计时和恢复规则为固定行为，不额外增加配置开关；运行状态与用户配置分开保存。
-
-## 全局配置
-
-### 当前应用的字段
-
-| 字段 | 行为 |
+| Field | Behavior |
 |---|---|
-| `schema_version` | 两份配置均为1，未知版本拒绝加载 |
-| `album.root/manifest` | 相册根目录及清单文件名，路径不包含 `/sdcard` |
-| `display.rotation_degrees` | 0/180横屏，90/270竖屏 |
-| `display.on_invalid_image` | 只接受 `skip`，坏图跳过 |
-| `network.wifi_enabled/ssid/password` | Wi-Fi开关及凭据，与NTP模式配套启用 |
-| `time.rtc_storage` | 校时使用UTC；首次迁移通过成功校时确认 |
-| `time.sync` | NTP服务器、周期、重试与超时，范围见[校时说明](wifi-time.md) |
-| `power.sleep_between_events` | 默认true，允许任务间深睡；外部供电保活优先 |
-| `power.low_battery_policy` | 当前仅接受 `none`，不执行低电量自动策略 |
+| `schema_version` | 1 in both files; unknown versions rejected |
+| `album.root/manifest` | Album root and manifest, without `/sdcard` |
+| `display.rotation_degrees` | 0/180 landscape, 90/270 portrait input |
+| `display.on_invalid_image` | Only `skip` is supported |
+| `network.wifi_enabled/ssid/password` | Wi-Fi activation and credentials, coordinated with NTP |
+| `time.rtc_storage` | UTC; initial migration confirmed by successful synchronization |
+| `time.sync` | Ordered NTP servers, interval, retry and timeout; see [time](wifi-time.md) |
+| `power.sleep_between_events` | Defaults true; external-power keep-awake takes precedence |
+| `power.low_battery_policy` | Only `none` is supported |
 
-### 预留字段
+`activity.enabled` must stay false. Device metadata, arbitrary `device.timezone` and sensor calibration offsets are reserved; display time remains UTC+8 and calibration offsets are not applied.
 
-`activity.enabled` 必须保持false。报时采用ESP-TTS小乐，engine=esp-tts、voice=xiaole、speech_speed=2固定。支持minutes的0/30、volume_percent、include_temperature/include_humidity、temperature_decimals的0/1和最多8段pause_periods。旧voice_pack、audio_root和quiet_hours在启动时原子迁移；不补播。详见[报时说明](announcement.md)。
+Announcements use fixed `engine=esp-tts`, `voice=xiaole`, `speech_speed=2`. Supported fields include `minutes` 0/30, `volume_percent`, temperature/humidity inclusion, temperature decimals 0/1, and up to eight pause periods. Defaults: off, volume 40%, pause 22:00–06:00. Legacy recorded-pack fields migrate atomically on boot. See [announcements](announcement.md).
 
-`device` 元数据和 `sensor` 校准偏移也为预留字段。设备显示时间固定为UTC+8，不通过 `device.timezone` 切换任意时区；温湿度读数未应用配置偏移。
+Language preference is browser-local. There is no language field in the SD schema.
 
-报时默认关闭，音量40%，暂停22:00–06:00。网页分别保存报时设置和暂停时段，保留无关的全局字段。
+## Safety and fallback
 
-## 配置安全与错误回退
+Each JSON is limited to 16 KiB, nesting to 32 levels, albums to 64 and header-valid photos to 2048 total. File types, ranges and paths are checked. Unknown fields produce warnings; invalid core fields reject the file. Apply only completely validated configurations, retaining a last-valid cache. With no valid configuration, use conservative recovery with automatic announcements off.
 
-加载前检查文件大小、类型、字段范围和路径；每个 JSON 不超过 16 KiB、最多 64 个相册、总共 2048 张头部有效图片，嵌套最多 32 层。未知字段报告警告，核心字段错误不采用该文件。启动时优先完整验证再替换内存配置，保留最后一次有效设置；首次无有效配置时进入保守恢复模式（自动播报关闭）。
-
-维护过程中采用临时文件加重命名更新配置。SD 热拔不鼓励；读写出错立即停止相关任务，避免挂死或反复刷新。Wi-Fi凭据通过配网/网页保存，也可由本机忽略文件导入，设备写入 SD 全局配置并缓存于本地 NVS；不提交 GitHub，示例只使用占位值。
+Updates use temporary files and rename/backup recovery. SD removal during operation is discouraged; errors stop related tasks. Credentials reside on SD and in local NVS cache, or ignored local provisioning files; never publish them. Examples use placeholders only.

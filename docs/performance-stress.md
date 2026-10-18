@@ -1,73 +1,48 @@
-# CPU、内存及并发压力测试
+# CPU, memory and concurrency stress tests
 
-[文档目录](README.md) · [声音与报时](announcement.md)
+English | [简体中文](zh-CN/performance-stress.md) · [Documentation](README.md)
 
-2026-10-14，0.16.1，ESP32-S3双核240 MHz、8 MiB PSRAM，小乐语速2、音量40%。通过FreeRTOS ESP Timer任务运行时间计数测量，采样间隔100毫秒，操作开始/结束也取样。百分比以双核总容量为100%；任务可迁移核心，不代表绑定某一个核心。
+Measured 2026-10-14 on 0.16.1, dual-core 240 MHz ESP32-S3 with 8 MiB PSRAM, Xiaole speed 2/volume 40%. FreeRTOS ESP Timer runtime counters sampled every 100 ms and at phase boundaries. **100% means both cores together**, not one core. Tasks may migrate.
 
-## 实测结果
-
-| 阶段 | 整机平均CPU | 主要任务 |
+| Phase | Average total CPU | Notes |
 |---|---:|---|
-| 语音合成与音频准备 | 38.25% | announcement 35.81%，约等效单核71.6% |
-| 音频播放 | 2.28% | announcement 0.59% |
-| 照片传输及文件操作 | 21.13% | httpd 14.76%，TCP/IP 3.00%，Wi-Fi 2.17% |
-| 墨水屏换图 | 2.58% | main 0.92%，大部分时间等待屏幕 |
-| NTP请求及超时 | 1.78% | 大部分时间等待网络 |
-| 空闲及控制请求 | 2.49% | 包含客户端轮询和测试清理 |
+| Synthesis/preparation | 38.25% | Announcement task 35.81%, about 71.6% of one core |
+| Playback | 2.28% | Announcement task 0.59% |
+| Transfers/file operations | 21.13% | HTTP 14.76%, TCP/IP 3.00%, Wi-Fi 2.17% |
+| E-paper refresh | 2.58% | Main 0.92%; primarily waits for panel |
+| NTP request/timeout | 1.78% | Primarily network waiting |
+| Idle/control | 2.49% | Includes polling and cleanup |
 
-统计任务自身约占双核总容量0.7%，已包含在表中。CPU值是阶段平均，不是瞬时峰值；断网和合成等阶段可能重叠，各行不相加。
+Profiler cost around 0.7% is included. These are phase means, not instantaneous peaks; overlapping phases must not be summed.
 
-内存使用ESP-IDF分配器的窗口最低可用量统计，不依赖100毫秒采样捕获短暂分配：
-
-| 内存 | 初始可用 | 窗口最低可用 | 相对初始的占用增量 |
+| Heap | Initially free | Window minimum free | Incremental use |
 |---|---:|---:|---:|
-| 内部可用堆 | 145207字节 | 88959字节（86.9 KiB） | 56248字节（54.9 KiB） |
-| PSRAM可用堆 | 8111104字节 | 7236432字节（6.90 MiB） | 874672字节（854.2 KiB） |
+| Internal | 145207 B | 88959 B (86.9 KiB) | 56248 B |
+| PSRAM | 8111104 B | 7236432 B (6.90 MiB) | 874672 B |
 
-窗口结束时PSRAM可用量回到8111104字节，内部可用143895字节，内部最大连续空闲块31744字节。最低量采用各堆分区的低水位汇总，是保守指标；各类内存最低点未必同时发生，增量不等于TTS独占内存。静态代码、已存在任务栈、网络缓冲区及统计自身不属于该增量。
+Allocator low-water marks, rather than sampling alone, capture short allocations. Their per-region sum is conservative and minima need not coincide. Incremental use is not TTS-exclusive memory and excludes preexisting stacks/static/network usage. End values: PSRAM 8111104 B, internal 143895 B, largest internal free block 31744 B.
 
-## 压力场景
+## Scenarios
 
-- 临时停用相册中上传3张BMP、下载4次，每张1152054字节，SHA-256一致。原照片不覆盖。
-- 播报期间下载返回409；下一张返回202并排队；重复下一张返回409；播报结束后才换图。
-- 临时将NTP服务器设为不可达的192.0.2.1，确认ESP_ERR_TIMEOUT、RTC仍有效；同期试听和换图命令返回409。恢复原服务器后校时成功。
-- Wi-Fi故障注入在1秒后断开，15秒后尝试重连，独立任务驱动恢复。中断上传没有发布为照片，临时文件没有阻止删除测试相册；Web恢复，之后试听成功。
-- 另一次断网发生在合成/播放期间，客户端确认离线，播报仍完成，Wi-Fi恢复，合成准备3714毫秒。
-- 清理首次收到409：状态缓存尚未反映索引忙。等待索引后删除成功；复测工具已改为检查实时文件接口并仅重试明确拒绝的409命令。
+Three 1,152,054-byte BMP uploads and four downloads matched SHA-256 in an isolated disabled album. During speech, download returned 409, next-photo accepted 202, duplicate next returned 409, then refresh waited until speech ended. NTP at unreachable `192.0.2.1` timed out without invalidating RTC; conflicting tests/refresh were rejected, and restoring servers restored sync.
 
-最终保留5册100张照片、原NTP服务器、多段暂停及自动报时去重记录；测试相册已移除。当前照片按测试请求切换一张。未观察到死锁、异常重启或内存不足。未验证06:00真实定时触发、长期压力、低电量和绝对起音误差。
+Injected Wi-Fi loss after 1 second attempted reconnection after 15 seconds via an independent recovery task. Interrupted uploads were not published; Web and speech recovered. Another outage during synthesis/playback still completed speech, with preparation 3714 ms. Cleanup initially saw stale cached busy state; the tool was changed to poll live file availability and retry only explicit rejection.
 
-## 复测
+The original five albums/100 photos, NTP servers, quiet periods and announcement deduplication state were retained. Test albums were removed. No deadlock, reset or out-of-memory was observed. Real 06:00 trigger, long-running stress, low battery and absolute audio timing were not tested.
 
-在menuconfig中开启CONFIG_EPAPER_DIAGNOSTICS（默认关闭），构建并烧录，保持USB连接电脑。启用后增加ESP Timer运行时间统计；常规固件不包含诊断HTTP入口。
+## Reproduce
+
+Enable `CONFIG_EPAPER_DIAGNOSTICS` (normally off), build/flash and keep computer USB attached:
 
 ```powershell
 python -m pip install requests
 python tools/stress_device.py --url http://DEVICE_IP --output ../stress-results
 ```
 
-工具创建并清理独立停用相册，临时改变NTP服务器并在finally恢复。输出放在源码库外，不记录Wi-Fi凭据或控制令牌。照片与日志不提交到仓库。
+The tool creates/cleans a disabled test album, temporarily changes NTP and restores it in finally. Keep output outside the repository; no Wi-Fi password/token is recorded. Protected endpoints: `GET /api/diagnostics`, `POST /api/diagnostics/reset` with `{}` while idle, and `POST /api/diagnostics/network-fault` with `{}` only when a USB host and restoration task are available. Recovery reconnects, waits up to 10 seconds, then returns to normal retry logic. Reset clears injection. Task snapshot capacity is 48; nonzero `snapshot_failures` invalidates unqualified CPU conclusions.
 
-带当前X-Album-Token可访问：
+## Image conversion concurrency
 
-| 接口 | 用途 |
-|---|---|
-| GET /api/diagnostics | 当前任务、分阶段CPU、堆低水位及网络故障状态 |
-| POST /api/diagnostics/reset | 请求{}，闲时开始新统计窗口 |
-| POST /api/diagnostics/network-fault | 请求{}，USB主机连接且统计恢复任务存在时允许 |
+0.17.0 (2026-10-15): a 4032×3024 baseline JPEG conversion overlapped an hourly test and queued next-photo. Speech and display succeeded; conversion progressed through waiting to completion in **72.913 s**, including **53.495 s** pause. Uncontended conversion was **19.414 s**. Internal free fell from 156503 to 87319 B; PSRAM 8110720 to 4923208 B. End: internal 152243 B, PSRAM restored to 8110720 B. Snapshot failures: zero. Major JPEG workspace bound about 2.26 MiB; 1200-pixel-wide BMP about 1.17 MiB.
 
-故障恢复先重连，最多等待10秒，之后交回正常联网重试逻辑；不修改SSID或密码。设备重启会清除注入状态。故障注入关闭时没有此接口。受限于任务数上限48，snapshot_failures非零表示存在无效采样，不能直接采用CPU结果。
-
-## 原图转换并发：0.17.0（2026-10-15）
-
-COM7 同型设备，4032×3024基线 JPEG 收齐后触发整点试听，在语音任务 busy 时请求下一张。试听实际结果 succeeded，换图控制任务 succeeded，转换依次经历 decoding、waiting、dithering、writing、validating、indexing、succeeded。转换总时长72.913秒，其中暂停53.495秒；无等待的大图转换19.414秒。
-
-该窗口初始内部可用堆156503字节、PSRAM8110720字节，最低87319字节（85.3 KiB）和4923208字节（4.70 MiB）；结束后内部152243字节、PSRAM回到8110720字节，运行时间快照失败0次。新增转换工作区上界：JPEG约2.26 MiB，1200像素宽BMP约1.17 MiB。低水位是窗口指标，不代表两项最低值同时出现。
-
-以双核总容量为100%，转换阶段整机平均CPU17.21%，photo_import任务10.63%；该阶段包含53.5秒等待，不能用来代表纯计算速度。重叠语音合成窗口整机平均36.95%，播放4.27%，屏幕刷新4.93%。未观察到内存不足、异常重启或试听失败。
-
-## PNG转换并发：0.17.2（2026-10-16）
-
-逐行libpng与双线性累计采用PSRAM，来源只保留当前行，目标RGBA采样工作区固定为屏幕像素数。960×576 PNG的主要工作区约2.32 MiB。12种有效PNG及4种拒绝文件顺序测试，结束PSRAM恢复到8110720字节。
-
-交错RGBA解码期间整点试听成功、下一张排队后成功显示，转换暂停52.910秒后继续，总时长68.201秒。此窗口内部最低104967字节、PSRAM最低4854652字节，结束PSRAM回到8110720字节，运行时间快照失败0次。转换窗口整机平均CPU12.89%，包含等待；语音合成重叠窗口37.53%、音频播放4.23%、换图4.33%，均以双核总容量为100%，不是瞬时峰值。
+0.17.2 (2026-10-16): Adam7 RGBA PNG with speech/next-photo completed in **68.201 s**, including **52.910 s** pause. Minimum free PSRAM 4854652 B, internal 104967 B; PSRAM restored to 8110720 B. RGB PNG conversion 10.934 s, RGB Adam7 14.717 s, RGBA 10.562 s, RGBA Adam7 15.495 s, indexed transparent 9.202 s for the measured 960×576 sample. These are individual device samples, not maximum-size or universal performance guarantees. See [validation](validation.md).

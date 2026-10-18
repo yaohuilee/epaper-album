@@ -1,3 +1,4 @@
+var __t=typeof window!=='undefined'&&window.epaperI18n?window.epaperI18n.t:(s=>s);
 /* Local composition only. The ESP32 still performs six-color dithering and SD publication. */
 (function(root){
 'use strict';
@@ -12,9 +13,9 @@ function suggestName(name,taken){
  for(let n=2;;n++){const suffix='_'+n+'.bmp';let stem=base;while(new TextEncoder().encode(stem+suffix).length>255)stem=Array.from(stem).slice(0,-1).join('');const candidate=stem+suffix;if(validName(candidate)&&!taken.has(candidate.toLowerCase()))return candidate;}
 }
 function nameError(name,existing,recipes,index){
- if(!validName(name))return '文件名不能为空，最多255字节；不包含路径、特殊字符、连续句点或保留名称。';
- if(existing.has(name.toLowerCase()))return '相册中已有同名照片，请修改保存文件名。';
- if(recipes.some((r,i)=>i!==index&&r.name?.toLowerCase()===name.toLowerCase()))return '本批照片中有同名文件，请使用不同的保存文件名。';
+ if(!validName(name))return __t('文件名不能为空，最多255字节；不包含路径、特殊字符、连续句点或保留名称。');
+ if(existing.has(name.toLowerCase()))return __t('相册中已有同名照片，请修改保存文件名。');
+ if(recipes.some((r,i)=>i!==index&&r.name?.toLowerCase()===name.toLowerCase()))return __t('本批照片中有同名文件，请使用不同的保存文件名。');
  return '';
 }
 function surface(w,h,recipe,rotation=0){
@@ -50,30 +51,30 @@ function bmp(rgba,w,h){
 }
 function inspect(buffer){
  const b=new Uint8Array(buffer),v=new DataView(buffer);let w=0,h=0;
- if(b.length<54)throw Error('照片数据不完整。');
+ if(b.length<54)throw Error(__t('照片数据不完整。'));
  if(v.getUint32(0)===0x89504e47&&v.getUint32(4)===0x0d0a1a0a){
-  if(v.getUint32(8)!==13||v.getUint32(12)!==0x49484452)throw Error('PNG 头部不合格。');w=v.getUint32(16);h=v.getUint32(20);
-  let at=8,ended=false;while(at+12<=b.length){const n=v.getUint32(at),kind=v.getUint32(at+4);if(n>b.length-at-12)throw Error('PNG 数据不完整。');if([0x6163544c,0x6663544c,0x66644154].includes(kind))throw Error('不支持 APNG 动画。');at+=n+12;if(kind===0x49454e44){ended=true;break;}}if(!ended)throw Error('PNG 数据不完整。');
+  if(v.getUint32(8)!==13||v.getUint32(12)!==0x49484452)throw Error(__t('PNG 头部不合格。'));w=v.getUint32(16);h=v.getUint32(20);
+  let at=8,ended=false;while(at+12<=b.length){const n=v.getUint32(at),kind=v.getUint32(at+4);if(n>b.length-at-12)throw Error(__t('PNG 数据不完整。'));if([0x6163544c,0x6663544c,0x66644154].includes(kind))throw Error(__t('不支持 APNG 动画。'));at+=n+12;if(kind===0x49454e44){ended=true;break;}}if(!ended)throw Error(__t('PNG 数据不完整。'));
  }else if(v.getUint16(0)===0xffd8){
   let at=2;while(at+4<=b.length){if(b[at++]!==255)break;while(b[at]===255)at++;const marker=b[at++];if(marker===0xda||marker===0xd9)break;const n=v.getUint16(at);if(n<2||n>b.length-at)break;
-   if(marker>=0xc0&&marker<=0xcf&&![0xc4,0xc8,0xcc].includes(marker)){if(marker!==0xc0||n<8||![1,3].includes(b[at+7]))throw Error('仅支持普通彩色或灰度 JPEG。');h=v.getUint16(at+3);w=v.getUint16(at+5);break;}at+=n;
+   if(marker>=0xc0&&marker<=0xcf&&![0xc4,0xc8,0xcc].includes(marker)){if(marker!==0xc0||n<8||![1,3].includes(b[at+7]))throw Error(__t('仅支持普通彩色或灰度 JPEG。'));h=v.getUint16(at+3);w=v.getUint16(at+5);break;}at+=n;
   }
  }else if(v.getUint16(0,true)===0x4d42&&v.getUint16(28,true)===24&&v.getUint32(30,true)===0){w=v.getInt32(18,true);h=Math.abs(v.getInt32(22,true));}
- if(!w||!h||w<0)throw Error('图像头部不完整或格式不支持。');
- if(w>12000||h>12000||w*h>40000000)throw Error('照片宽高上限12000像素，总像素上限4000万。');
+ if(!w||!h||w<0)throw Error(__t('图像头部不完整或格式不支持。'));
+ if(w>12000||h>12000||w*h>40000000)throw Error(__t('照片宽高上限12000像素，总像素上限4000万。'));
  return {width:w,height:h};
 }
 async function decode(file){
  inspect(await file.arrayBuffer());
  const url=URL.createObjectURL(file),image=new Image();
- try{image.src=url;await image.decode();const w=image.naturalWidth,h=image.naturalHeight;if(!w||!h||w>12000||h>12000||w*h>40000000)throw Error('照片宽高上限12000像素，总像素上限4000万。');return image;}
- catch(e){image.src='';throw Error(file.name+'：'+(e.message.includes('上限')?e.message:'浏览器无法解码此照片。'));}
+ try{image.src=url;await image.decode();const w=image.naturalWidth,h=image.naturalHeight;if(!w||!h||w>12000||h>12000||w*h>40000000)throw Error(__t('照片宽高上限12000像素，总像素上限4000万。'));return image;}
+ catch(e){image.src='';throw Error(file.name+__t('：')+(e.message.includes(__t('上限'))?e.message:__t('浏览器无法解码此照片。')));}
  finally{URL.revokeObjectURL(url);}
 }
 async function prepare(file,recipe,w,h,rotation=w<h?90:0){
- const name=recipe.name||outputName(file.name);if(!validName(name))throw Error('保存文件名不合法。');
+ const name=recipe.name||outputName(file.name);if(!validName(name))throw Error(__t('保存文件名不合法。'));
  const image=await decode(file),canvas=document.createElement('canvas'),view=surface(w,h,recipe,rotation);canvas.width=view.width;canvas.height=view.height;
- try{paint(canvas,image,recipe);const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data,p=rotate(data,canvas.width,canvas.height,view.turn);if(p.width!==w||p.height!==h)throw Error('相框方向与设备输出尺寸不匹配。');return new File([bmp(p.pixels,w,h)],name,{type:'image/bmp'});}
+ try{paint(canvas,image,recipe);const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data,p=rotate(data,canvas.width,canvas.height,view.turn);if(p.width!==w||p.height!==h)throw Error(__t('相框方向与设备输出尺寸不匹配。'));return new File([bmp(p.pixels,w,h)],name,{type:'image/bmp'});}
  finally{image.src='';canvas.width=canvas.height=1;}
 }
 async function review(files,w,h,rotation=w<h?90:0,options={}){
@@ -81,10 +82,10 @@ async function review(files,w,h,rotation=w<h?90:0,options={}){
  const recipes=files.map((file,i)=>{const r={...initial(),...options.drafts?.[i]};r.name=suggestName(r.name||file.name,taken);taken.add(r.name.toLowerCase());return r;});
  let at=0,image=null,serial=0,loading=false,done=false,drag=null,settle,defaultFrame=(360-rotation)%360;
  canvas.width=w;canvas.height=h;
- function buttons(){const r=recipes[at];$('compose-back').disabled=loading||at===0;$('compose-confirm').disabled=loading||!image||!!nameError(r.name,existing,recipes,at);$('compose-confirm').textContent=at===files.length-1?'确认并上传':'下一张';for(const id of ['compose-save-name','compose-frame','compose-left','compose-right','compose-mode','compose-reset'])$(id).disabled=loading||!image;$('compose-zoom').disabled=loading||!image||r.mode!=='cover';}
- function showName(){const error=nameError(recipes[at].name,existing,recipes,at);$('compose-save-name').setAttribute('aria-invalid',String(!!error));$('compose-name-note').textContent=error||options.notice||(recipes[at].name!==outputName(files[at].name)?'将另存为新照片，原照片保留。':'文件名可用。');$('compose-name-note').classList.toggle('name-error',!!error);buttons();}
- function draw(){if(!image)return;const view=surface(w,h,recipes[at],rotation);canvas.width=view.width;canvas.height=view.height;paint(canvas,image,recipes[at]);$('compose-frame').value=String(view.frame);$('compose-mode').value=recipes[at].mode;$('compose-zoom').value=Math.round(recipes[at].zoom*100);$('compose-scale').textContent=Math.round(recipes[at].zoom*100)+'%';$('compose-info').textContent='原图 '+image.naturalWidth+' × '+image.naturalHeight+' · 构图 '+view.width+' × '+view.height+' · 存储 '+w+' × '+h;buttons();}
- async function load(){const mine=++serial;loading=true;if(image)image.src='';image=null;canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);$('compose-name').textContent=files[at].name;$('compose-position').textContent=(at+1)+' / '+files.length;$('compose-info').textContent='正在读取本地照片…';buttons();
+ function buttons(){const r=recipes[at];$('compose-back').disabled=loading||at===0;$('compose-confirm').disabled=loading||!image||!!nameError(r.name,existing,recipes,at);$('compose-confirm').textContent=at===files.length-1?__t('确认并上传'):__t('下一张');for(const id of ['compose-save-name','compose-frame','compose-left','compose-right','compose-mode','compose-reset'])$(id).disabled=loading||!image;$('compose-zoom').disabled=loading||!image||r.mode!=='cover';}
+ function showName(){const error=nameError(recipes[at].name,existing,recipes,at);$('compose-save-name').setAttribute('aria-invalid',String(!!error));$('compose-name-note').textContent=error||options.notice||(recipes[at].name!==outputName(files[at].name)?__t('将另存为新照片，原照片保留。'):__t('文件名可用。'));$('compose-name-note').classList.toggle('name-error',!!error);buttons();}
+ function draw(){if(!image)return;const view=surface(w,h,recipes[at],rotation);canvas.width=view.width;canvas.height=view.height;paint(canvas,image,recipes[at]);$('compose-frame').value=String(view.frame);$('compose-mode').value=recipes[at].mode;$('compose-zoom').value=Math.round(recipes[at].zoom*100);$('compose-scale').textContent=Math.round(recipes[at].zoom*100)+'%';$('compose-info').textContent=__t('原图 ')+image.naturalWidth+' × '+image.naturalHeight+__t(' · 构图 ')+view.width+' × '+view.height+__t(' · 存储 ')+w+' × '+h;buttons();}
+ async function load(){const mine=++serial;loading=true;if(image)image.src='';image=null;canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);$('compose-name').textContent=files[at].name;$('compose-position').textContent=(at+1)+' / '+files.length;$('compose-info').textContent=__t('正在读取本地照片…');buttons();
   try{const loaded=await decode(files[at]);if(mine!==serial||done){loaded.src='';return}image=loaded;loading=false;if(recipes[at].frame==null)recipes[at].frame=defaultFrame;$('compose-save-name').value=recipes[at].name.slice(0,-4);showName();draw();}
   catch(e){if(mine!==serial||done)return;loading=false;$('compose-info').textContent=e.message;buttons();}
  }

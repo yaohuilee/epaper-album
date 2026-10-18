@@ -95,6 +95,7 @@ extern const char page[] asm("_binary_status_html_start");
 extern const char setup_page[] asm("_binary_setup_html_start");
 extern const char album_page[] asm("_binary_albums_html_start");
 extern const char ui_css[] asm("_binary_ui_css_start");
+extern const char i18n_js[] asm("_binary_i18n_js_start");
 extern const char ui_js[] asm("_binary_ui_js_start");
 extern const char announcement_js[] asm("_binary_announcements_js_start");
 extern const char photo_editor_js[] asm("_binary_photo_editor_js_start");
@@ -104,7 +105,7 @@ static esp_err_t ui_asset(httpd_req_t *req)
     httpd_resp_set_type(req,css?"text/css; charset=utf-8":"text/javascript; charset=utf-8");
     httpd_resp_set_hdr(req,"Cache-Control","no-store");
     httpd_resp_set_hdr(req,"X-Content-Type-Options","nosniff");
-    return httpd_resp_send(req,css?ui_css:!strcmp(req->uri,"/announcements.js")?announcement_js:!strcmp(req->uri,"/photo_editor.js")?photo_editor_js:ui_js,HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(req,css?ui_css:!strcmp(req->uri,"/i18n.js")?i18n_js:!strcmp(req->uri,"/announcements.js")?announcement_js:!strcmp(req->uri,"/photo_editor.js")?photo_editor_js:ui_js,HTTPD_RESP_USE_STRLEN);
 }
 static esp_err_t captive_redirect(httpd_req_t *req,httpd_err_code_t code)
 {
@@ -384,6 +385,8 @@ esp_err_t epaper_http_start(void)
     const httpd_uri_t album_ui={.uri="/albums",.method=HTTP_GET,.handler=albums_page};
     const httpd_uri_t css={.uri="/ui.css",.method=HTTP_GET,.handler=ui_asset};
     const httpd_uri_t js={.uri="/ui.js",.method=HTTP_GET,.handler=ui_asset};
+    const httpd_uri_t language_js={.uri="/i18n.js",.method=HTTP_GET,.handler=ui_asset};
+    esp_err_t language_result=httpd_register_uri_handler(server,&language_js);if(language_result!=ESP_OK)return language_result;
     const httpd_uri_t editor_js={.uri="/photo_editor.js",.method=HTTP_GET,.handler=ui_asset};
     esp_err_t editor_result=httpd_register_uri_handler(server,&editor_js);if(editor_result!=ESP_OK)return editor_result;
     const httpd_uri_t status={.uri="/api/status",.method=HTTP_GET,.handler=status_json};

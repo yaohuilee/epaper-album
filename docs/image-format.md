@@ -1,67 +1,56 @@
-# 照片格式
+# Photo format
 
-[文档首页](README.md) · [项目首页](../README.md)
+English | [简体中文](zh-CN/image-format.md) · [Documentation](README.md)
 
-照片库可上传普通 JPEG、PNG 或24位无压缩 BMP，由设备自动转换。JPEG/BMP从0.17.0起支持，PNG从0.17.2起支持。SD 中用于播放的文件仍为最终尺寸的六色 BMP。
+The library accepts ordinary JPEG, PNG and uncompressed 24-bit BMP sources. Files used for playback on SD remain target-size six-color BMPs.
 
-## 相框摆放方向（0.17.5）
+## Physical orientation and composition
 
-相框横放时按800×480构图，向左或向右竖放时按480×800构图；也支持倒置横放。相框方向与照片本身的旋转独立选择，完整显示/铺满、缩放与拖动均基于当前摆放后的画布。默认方向对应固件现有旋转设置，竖图不自动决定相框的实际姿态。
+Landscape composition uses 800×480; clockwise/counterclockwise portrait uses 480×800. Upside-down landscape is supported. Physical frame orientation is independent of photo rotation. A portrait source does not establish how the frame is physically placed.
 
-浏览器在上传前将构图像素反向旋转，并抵消固件的rotation_degrees映射，使相框按所选方向摆放时照片正向显示。SD文件仍符合固件的800×480或480×800输入约定；不需要改变硬件驱动或整库配置。原始BMP在电脑中可能显示为侧转的面板数据，网页照片库的现有预览也直接显示该原始BMP。
+The browser applies decoded EXIF orientation, then user rotation, and draws a white-backed canvas. The default **Fit whole photo** preserves the whole image with margins. **Fill and crop** uses the display aspect ratio, 100–400% zoom and draggable position. Confirm the entire batch before any transfer.
 
-摆放方向只参与当前照片的生成，不保存额外方向元数据，也不修改旧照片。同一相框固定竖放时，其余照片也需按同一摆放方向重新构图；已裁掉的内容仍需原图恢复。
+Before upload, pixels are rotated by `−(F+R)`, where F is physical frame rotation and R is firmware decoding rotation. This preserves the existing 800×480/480×800 input contract. No extra orientation metadata is stored. Raw BMP previews on a computer or in the library may look sideways because they show panel data. Existing photos are not reoriented automatically; lost cropped content requires the original source.
 
-## 网页上传前确认构图（0.17.4）
+The browser encodes a positive-height 24-bit BMP with the reviewed save name. The device still performs brightness adjustment and dithering. Composition recipes are not saved on SD. To recompose later, select the source again and save under a new name. The source and existing device photo remain intact.
 
-网页照片库先在浏览器中逐张确认构图。默认完整显示，按比例缩小并居中留白；不会为了铺满横屏而裁掉竖图上下内容。JPEG的EXIF方向由浏览器解码时应用，再叠加用户选择的90°旋转。铺满模式按屏幕比例裁剪，缩放范围100%–400%，拖动确定保留区域。输出尺寸从状态中的`album.image_width/image_height`取得。
+## Direct source import API
 
-整批确认前不发送图像。确认后逐张在白底Canvas上合成，生成无EXIF的24位BMP，通过原有后台导入接口上传。设备继续执行亮度调整和六色抖动；输入已经是目标尺寸，不再损失用户确认的范围。原文件留在电脑/手机上，浏览器的构图参数不写入SD；以后重新构图需要再次选择原图，在构图弹窗修改保存文件名后另存；原文件和旧照片保留。已裁掉信息的旧BMP无法恢复原内容。
+`PUT /api/upload` accepts 54 bytes through **8 MiB (8,388,608 bytes inclusive)**, maximum 12,000 pixels per side and 40 megapixels total.
 
-本地解码使用浏览器内存，单张原文件仍限制8 MiB、每边12000像素及4000万像素。BMP/PNG/JPEG在构图前检查基本头部，APNG与非基线JPEG拒绝。浏览器解码能力还会影响可用来源；完整显示/裁剪仅保证构图，预览不模拟墨水屏色度。
+| Format | Supported | Rejected |
+|---|---|---|
+| JPEG | Baseline RGB/YCbCr or grayscale; eight EXIF orientations | Progressive, CMYK, damaged data |
+| PNG | RGB, RGBA, grayscale, grayscale alpha, indexed; standard 1/2/4/8/16-bit combinations; Adam7 | APNG, invalid CRC, truncation |
+| BMP | 24-bit BI_RGB; 40–124-byte DIB; positive or negative height | Indexed, 32-bit, compressed |
 
-## API直接上传原图并自动转换
+PNG transparency is composited on white; 16-bit channels use their upper 8 bits. Direct source uploads are center-cropped and bilinearly resized according to device rotation. Web uploads first compose the image in the browser, so this default crop does not choose the content.
 
-照片库支持 `.jpg`、`.jpeg`、`.png` 和 `.bmp`，0.17.1 起单文件54字节至8 MiB（8388608字节，含上限），宽高各不超过12000像素，总像素不超过4000万。
+Automatic brightness stretching and slight contrast adjustment precede serpentine Floyd–Steinberg six-color error diffusion. Direct API imports keep the source stem with `.bmp`; the web editor can choose another stem and suggests unused names. Outputs never silently replace existing BMPs.
 
-- JPEG：基线 RGB/YCbCr 或灰度，支持 EXIF 的八种方向；不支持渐进式 JPEG、CMYK 和损坏文件。
-- PNG（0.17.2）：RGB、RGBA、灰度、灰度透明及索引色，支持标准1/2/4/8/16位组合与Adam7交错。透明或半透明像素先合成到白底；16位通道取高8位。不支持APNG动画。
-- BMP：24位 BI_RGB，无压缩，DIB头40–124字节，支持正高度和负高度。拒绝索引色、32位及压缩 BMP。
-- API直接上传来源图时，根据设备旋转设置居中裁剪到屏幕比例，双线性缩放到800×480或480×800。网页从0.17.4起先确认构图、生成目标尺寸BMP，不使用此默认裁剪选择内容。
-- 亮度自动拉伸、轻微对比调整，再执行蛇形 Floyd–Steinberg 六色误差扩散。
-- API直接上传沿用原文件名主体，扩展名为 `.bmp`，同名不覆盖。网页从0.17.7起可修改保存文件名，并为相册或批次内同名输出建议未占用的名称。
+The low-priority conversion task yields to announcements and display refresh, then resumes. SD temporary source/output files are removed after success/failure and cleaned after interrupted boots. The original computer file is not modified. No APNG, WebP, HEIC or ICC profile conversion is implemented in firmware. Convert special color spaces to sRGB beforehand. PNG ancillary color/text metadata does not drive rendering. File palette values are not measured panel reflectance colors.
 
-页面依次显示上传、解码/缩放、抖动、写入、校验和索引进度。转换采用后台低优先级任务，报时和换图占用资源时暂停，结束后继续。转换中的原图和输出暂存在 SD 隐藏文件中，完整校验后发布 BMP；成功或失败后清理临时文件，开机也清理上次中断的转换临时文件。电脑上的原图不修改。
+## Playback BMP and unchanged upload
 
-不支持 APNG、WebP、HEIC，也不执行 ICC 色彩配置转换；PNG色彩/文本等附加元数据不参与成图。含特殊色彩配置的图片宜先在电脑端转为 sRGB。未测量面板反射色，六色文件不等同于屏幕实测色度。
+Direct SD copying and `PUT /api/photo` require final files; this endpoint does not convert.
 
-## SD 播放文件与原样上传接口
+- 800×480 for rotation 0/180; 480×800 for 90/270.
+- Windows BMP with 40-byte BITMAPINFOHEADER, planes=1, 24 bpp, BI_RGB=0.
+- Positive height, bottom-up rows. Indexed, negative-height playback, 32-bit alpha, RLE and bitmask compression are rejected.
+- BGR pixels; each row padded to four bytes. Header offset, bounds, dimensions, stride and length are checked.
+- Only RGB `000000`, `FFFFFF`, `FF0000`, `FFFF00`, `0000FF`, `00FF00` are allowed: black, white, red, yellow, blue and green.
+- Panel codes are respectively 0, 1, 3, 2, 5, 6. Two pixels per byte; an 800×480 frame uses 192,000 bytes.
+- A conventional 54-byte header produces a 1,152,054-byte file. Size alone does not establish validity.
 
-直接复制到 SD 或使用 `PUT /api/photo` 原样上传的文件仍须符合以下约定。该接口不执行转换。
+Apply orientation, sRGB and transparency first; fit/crop and resize before quantization. Do not resize or JPEG-compress after dithering. Text and lines should retain pure palette colors. Photos display without temporary clock/status overlays; setup has a separate screen.
 
-- 横屏 800×480，竖屏 480×800；`rotation_degrees` 0/180 对应横屏，90/270 对应竖屏。不匹配则跳过。
-- Windows BMP，BITMAPINFOHEADER 40 字节，planes=1、24 bpp、BI_RGB=0（无压缩）。
-- 标准底向上正高度；当前不接收负高度、索引色、32 位透明、RLE 或位掩码压缩。
-- 像素按 BGR 存储，每行补齐到 4 字节；解析以文件头偏移为准，检查偏移、长度、尺寸、行跨度及越界。
-- 文件内颜色仅允许 RGB：黑 `000000`、白 `FFFFFF`、红 `FF0000`、黄 `FFFF00`、蓝 `0000FF`、绿 `00FF00`。遇到其他色值拒绝该图并记录诊断，不能默默当白色。
-- 对应面板色码 0、1、3、2、5、6；两像素打包为一字节，800×480 缓冲区为 192000 字节。
-- 常规 54 字节文件头加像素数据，约 1152054 字节；解析器不只靠文件大小判断合法性。
-
-推荐流程：应用 EXIF 方向 → 转 sRGB 并合成透明背景 → 按比例裁剪或补白 → 高质量缩放到最终尺寸 → 亮度/对比调整 → 六色抖动 → 保存 24 位无压缩 BMP。照片可用误差扩散，文字/线条保持纯色；抖动后不再缩放或保存 JPEG。
-
-六色编码是文件约定，不代表面板实测色度。当前直接显示整张照片，不叠加时钟或状态栏；设备状态通过 Web 页面或串口查看，配网使用专门画面。报时使用 ESP-TTS 小乐。
-
-## 电脑端处理工具
-
-`tools/prepare_photos.py` 使用 Pillow，将 PNG/JPEG/WebP/BMP 转为可直接播放的格式：EXIF 方向、透明背景合成白色、按比例居中裁剪、Lanczos 缩放、轻微对比/锐化、固定六色 Floyd–Steinberg 误差扩散，最后保存 RGB 24 位 BMP。不会覆盖同名输出。
+## Desktop tools
 
 ```powershell
 python -m pip install Pillow
 python tools/prepare_photos.py originals prepared --preview-dir previews
 ```
 
-默认输出 800×480；竖屏加 `--rotation 90` 或 `--rotation 270`，同时在设备配置中使用对应旋转。工具只在量化前缩放；预览 PNG 和设备 BMP 使用相同像素。生成的 `conversion.json` 记录格式、大小与 SHA256。屏幕实际反射色与电脑预览不同，当前没有面板色度实测校准。
+This tool accepts PNG/JPEG/WebP/BMP, applies EXIF, composites white, center-crops, uses Lanczos resizing, slight contrast/sharpening and fixed-palette dithering, then writes 24-bit BMP without overwriting. Default output is 800×480. Add `--rotation 90` or `270` and use the corresponding device rotation for portrait input. `conversion.json` records size, format and SHA-256. Preview PNGs share the BMP pixels, not the real panel reflectance.
 
-本机 ComfyUI 可先生成 1280×768 的横向图像，比例正好对应屏幕，再使用此工具。原始生成图和工作流保留在电脑，SD 相册目录仅放转换后的 BMP。
-
-`tools/validate_bmp.c` 可与 `components/core/bmp.c` 一起编译为桌面校验器，使用设备同一解码实现验证图片完整像素，横屏用法：`validate_bmp photo1.bmp photo2.bmp`。
+ComfyUI can generate 1280×768 landscape sources at the target aspect ratio. Keep source images and workflows on the computer; only final BMPs belong in playback folders. `tools/validate_bmp.c` with `components/core/bmp.c` uses the actual decoder to validate full images; landscape usage is `validate_bmp photo1.bmp photo2.bmp`.

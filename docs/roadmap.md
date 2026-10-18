@@ -1,41 +1,34 @@
-# 当前状态与后续计划
+# Status and roadmap
 
-[文档首页](README.md) · [项目首页](../README.md)
+English | [简体中文](zh-CN/roadmap.md) · [Documentation](README.md)
 
-当前源码版本0.17.7。实现范围与验收范围分别列出，详细证据见[验证摘要](validation.md)。
+Source version **0.18.0**. Implementation and hardware verification are distinct; see [validation](validation.md).
 
-## 已实现
+## Implemented
 
-| 范围 | 功能 |
+| Area | Features |
 |---|---|
-| 基础与硬件 | Windows ESP-IDF框架、PMIC、SD、RTC、SHTC3、屏幕与按键 |
-| 离线相册 | 配置校验、索引、六色BMP、顺序/随机和两种相册策略、断点恢复与深睡、已配网设备断网继续播放 |
-| 时间与网络 | NTP周期/失败重试、RTC UTC、手工同步、Wi-Fi/校时设置保存 |
-| Web维护 | 状态页、照片库、播放设置、预览、指定照片点播、照片API、中文相册新建/重命名/确认删除、改名中断恢复 |
-| 配网与供电 | 开放热点与二维码、手机配网、外部供电持续联网、电池计划深睡 |
-| 离线报时 | 00/30分滴声、小乐时间/温湿度、音量试听、多段暂停、NVS去重及ESP-TTS |
-| 原图导入 | JPEG/PNG/24位 BMP 上传前确认构图、相框横竖摆放、照片旋转与裁剪、页面编辑保存名、批次重名校验及另存冲突恢复；设备后台六色抖动及网页进度 |
-| 完整替换 | Qwen Image 2.1生成/转换、旧库备份、100张网络上传与回读 |
+| Hardware | Native Windows IDF, PMIC, SD, RTC, SHTC3, display and buttons |
+| Offline album | Validated six-color BMP, sequential/shuffle, two strategies, recovery/deep sleep, saved-network offline playback |
+| Network/time | NTP intervals/retries, RTC UTC, manual sync, SD-saved Wi-Fi/sync settings |
+| Web maintenance | Status, folders, create/rename/confirmed delete with recovery, photo APIs, previews and selected-photo display |
+| Setup/power | Open AP/QR/captive setup, external-power online, battery sleep |
+| Speech | Hourly/half-hourly Xiaole Mandarin, environment readings, tests/volume, multiple pauses and NVS deduplication |
+| Imports | JPEG/PNG/24-bit BMP, manual composition/frame placement, save-as naming, six-color background conversion/progress |
+| Library replacement | Qwen Image 2.1 generation, backup, 100-file network upload/readback |
+| Languages | English/Chinese header switch, embedded catalog and bilingual documentation |
 
-## 尚未实现
+## Pending
 
-| 功能 | 后续工作 |
-|---|---|
-| 手动报时/静音 | 与KEY现有配网入口协调，确定交互并验收 |
-| 声音活动检测 | 双麦采样、基线/迟滞、自身声音抑制和功耗取舍；默认关闭 |
-| 低电量自动策略 | 实测容量/电流/续航，确定阈值、滞回与安全停止顺序 |
+Manual physical speech/mute interaction needs coordination with KEY provisioning. Microphone activity detection needs baseline/hysteresis, self-sound suppression and power evaluation; it stays disabled. Automatic low-battery policies need actual capacity/current/runtime measurements, thresholds and safe-stop ordering. English speech is not implemented; Xiaole remains Mandarin.
 
-确认方案见[整点与半点报时设计](design/clock-announcement.md)，后续环境播报和活动背景见[早期规划](design/announcement-and-activity.md)。活动检测仍是预留规格；报时安装和操作见[报时说明](announcement.md)。
+## Further hardware acceptance
 
-## 后续硬件验收
+1. Long playback across battery/external power and unstable networks.
+2. Deep-sleep current, actual battery capacity and runtime.
+3. Full-card/hot-removal, malformed configuration, refresh power loss, NVS failures and BUSY timeouts.
+4. RTC all-power removal, long-term drift and alarm IRQ wiring.
+5. Real 06:00 triggers, cross-day/mute boundaries, sensor failures, refresh crossing speech times and backwards clock adjustments.
+6. Physical phone composition/batch use and remaining physical-frame/firmware-rotation combinations.
 
-1. 长时间轮播，比较电池/外部电源及网络不稳定场景。
-2. 测量深睡电流、真实容量与续航。
-3. 注入SD满盘/掉卡、配置损坏、刷新断电、NVS写失败及BUSY超时。
-4. 确认RTC全断电保持、长期走时误差和报警IRQ线路。
-5. 在现有ESP-TTS基础上验收温湿度异常、跨天、静音边界、06:00真实触发、刷屏跨播报点及校时回拨。
-6. 在真实手机上确认构图弹窗和多图操作，目视复核实际旋转相框后的方向；其余物理姿态与固件旋转组合补齐上板验证。
-
-已完成短期任务CPU、内存低水位、传输/换图请求、NTP超时和限时Wi-Fi断开测试；数据与限制见[性能压力测试](performance-stress.md)。
-
-早期M0–M4阶段的实现背景见[历史M1说明](history/m1-implementation.md)和[完整验收日志](history/validation-log.md)。
+Short CPU/heap/network-fault tests are documented in [performance](performance-stress.md). Historical M0–M4 context is in [M1](history/m1-implementation.md) and [version records](history/validation-log.md).

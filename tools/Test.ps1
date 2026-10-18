@@ -55,6 +55,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Import UI tests failed.' }
         node tests/show_photo_ui_test.cjs
         if ($LASTEXITCODE -ne 0) { throw 'Show photo UI tests failed.' }
+        node tests/i18n_test.cjs
+        if ($LASTEXITCODE -ne 0) { throw 'Language UI tests failed.' }
         node tests/photo_editor_test.cjs
         if ($LASTEXITCODE -ne 0) { throw 'Photo editor tests failed.' }
     } else {

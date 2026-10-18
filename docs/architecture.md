@@ -1,80 +1,55 @@
-# 运行架构
+# Runtime architecture
 
-[文档首页](README.md) · [项目首页](../README.md)
+English | [简体中文](zh-CN/architecture.md) · [Documentation](README.md)
 
-本页描述当前实现。音频报时见[声音与报时](announcement.md)；声音活动和低电量策略仍未实现。
+This describes the current implementation. Activity detection and automatic low-battery policies are not implemented.
 
-## 实际模块
-
-| 位置 | 职责 |
+| Location | Responsibility |
 |---|---|
-| `main/app_main.c` | 启动、按键、任务推进、网络生命周期和深睡 |
-| `components/board/` | GPIO、I2C、屏幕SPI与PMIC板级初始化 |
-| `components/core/` | 日历、CRC、BMP解码、图像采样/抖动和自然排序 |
-| `components/devices/` | RTC和SHTC3读写 |
-| `components/storage/` | SD挂载、全局配置读取与卸载 |
-| `components/album/` | 配置验证、目录索引、播放队列和文件规则 |
-| `components/services/` | 显示、运行状态/NVS、校时、Wi-Fi、配网与HTTP |
+| `main/app_main.c` | Boot, buttons, task advancement, network lifetime and sleep |
+| `components/board/` | GPIO, I2C, display SPI and PMIC initialization |
+| `components/core/` | Calendar, CRC, BMP, image sampling/dithering, sorting |
+| `components/devices/` | RTC, SHTC3 and audio devices |
+| `components/storage/` | SD mount, global settings and unmount |
+| `components/album/` | Validation, catalog, playback queue and file rules |
+| `components/services/` | Display, NVS/runtime, synchronization, Wi-Fi, setup and HTTP |
 
-## 运行流程
+## Execution
 
-```text
-启动/唤醒
-  → 初始化硬件、挂载SD、加载并校验配置
-  → 恢复最后成功照片及任务截止时间
-  → 处理按键、HTTP命令、到期换图/校时
-  → 外部供电：继续运行并保持联网
-  → 电池供电：任务完成后安排定时/按键深睡
-```
+Boot/wake initializes hardware, mounts SD and validates settings, restores the successful photo/deadlines, then processes buttons, HTTP and due events. External power keeps it online. On battery, completed tasks lead to timer/button deep sleep.
 
-完整重启恢复照片后开始新间隔，不追补关机期间换图。正常深睡唤醒保留原截止时间。换图只有显示成功后才提交播放位置；刷新失败保留原位置并安排重试。
+Cold restart begins a full photo interval without catch-up. Normal deep-sleep wake retains deadlines. Only successful display commits a playback position. Failed refresh retains the old position and schedules retry.
 
-## 配置与状态
+SD root settings and album manifest are separate. NVS partition `album_state` holds position, shuffle seed/cursor, dirty-screen state and last-valid configuration. Application tasks perform validated temporary-file/readback/backup saves; HTTP does not directly mutate playback queues. SD transfer, configuration writes, decoding and refresh share a lock. File updates trigger index rebuilds. Neither SD nor NVS is automatically erased as error recovery.
 
-SD根配置保存设备设置，相册清单保存播放规则。运行位置、随机种子/游标、屏幕dirty标志和有效配置缓存保存于独立NVS分区 `album_state`。
+## Network, time and power
 
-网页保存通过应用任务执行，使用验证、临时文件、读回及备份恢复流程。HTTP处理器不直接修改可变播放队列。SD传输、配置写入、解码和显示互斥；文件操作结束后重建索引。
+HTTP and NTP share Wi-Fi lifetime. USB/external power keeps them online; battery completion stops services before unmount and sleep. External RTC stores UTC; device displays UTC+8. Clock adjustments preserve remaining photo dwell time.
 
-首次无有效配置进入恢复路径；存在有效缓存时可回退。SD不自动格式化，NVS初始化失败不自动擦除。故障和真实断电验收范围见[验证摘要](validation.md)。
+First unconfigured boot or long KEY enters AP+STA provisioning, pauses photo/sync tasks and prevents sleep. Saved-network failure does not automatically provision. After successful setup, a 30-second hotspot grace period precedes restoration of playback. See [setup](wifi-provisioning.md).
 
-## 网络与时间
+Display validates BMP and packs a 192,000-byte frame. Full refresh takes about 30 seconds. Equal pixel content is not refreshed. ESP timer and buttons wake deep sleep; external RTC alarm IRQ wiring remains unconfirmed. PMIC hardware shutdown cannot use the ESP sleep timer. RTC RAM differs from the external clock chip.
 
-HTTP与NTP共用Wi-Fi生命周期。电脑或USB外部供电保持联网；电池任务结束关闭HTTP/Wi-Fi后深睡。RTC保存UTC，页面显示北京时间。校时引起时间跳变时调整相册截止时间，保持剩余停留时长。
+## Speech and resource coordination
 
-无有效Wi-Fi或KEY长按时进入AP+STA配网，暂停换图/校时并阻止深睡。配网成功保留热点30秒，随后关闭并恢复相册。具体见[配网](wifi-provisioning.md)、[校时](wifi-time.md)和[供电](usb-power.md)。
+ESP-TTS Xiaole maps Flash voice data, synthesizes complete Mandarin phrases as 16 kHz PCM and resamples to 24 kHz. A complete beep/silence/speech sequence is prepared before playback, starting preparation 20 seconds before the target. Buffers, synthesizer and mappings are released afterward. No SD recordings or voice-pack API remain.
 
-## 显示与电源
+Announcements do not refresh e-paper. Refresh, synchronization and transfers are deferred/rejected in the protection window; next-photo requests merge into a queued request. Optional diagnostics measure per-phase CPU and heap low watermarks; a separate task restores injected network faults. Normal builds disable diagnostics. See [stress](performance-stress.md).
 
-电脑端完成缩放和六色抖动，设备验证BMP并打包192000字节屏幕帧。完整刷新约30秒，相同像素不重复刷新。照片停留从刷新结束计算。
+## Image imports
 
-深睡使用ESP内部定时器和按键唤醒。外部RTC报警IRQ线路尚未确认；PMIC硬件关机不能依靠ESP深睡定时器唤醒。屏幕断电保留画面，RTC RAM与独立RTC芯片是不同硬件。
+The single priority-1 `photo_import` task uses a 12 KiB stack. JPEG streams MCUs with an initial decode scale into a target-size accumulator, without a full-resolution RGB allocation. BMP samples source rows. PSRAM holds major buffers; the target buffer is reused for BGR output. PNG uses libpng row decoding to RGBA, white compositing and the same 16-bit sampling workspace. Adam7 contributes only newly updated pixels. Input dimensions, metadata and allocator usage are bounded; CRC/truncation errors use shared cleanup.
 
-## ESP-TTS离线报时与资源协调
+Short SD lock regions and per-row resource checks let speech and refresh take priority. Publication and indexing use file revisions. Battery sleep waits for conversion cleanup. HTTP still services one request at a time; source reception may delay status reads. After reception, clients poll conversion progress.
 
-自动整点/半点报时及试听使用ESP-TTS小乐，Flash音库直接映射，UTF-8完整短句合成16 kHz PCM，再转换为24 kHz加入滴声和静默。目标前20秒准备完整序列，播放完成释放PSRAM缓冲区及合成器。无需SD录音，也没有音频安装API；规则与迁移见[声音与报时](announcement.md)。
+## Selected photo and browser composition
 
-报时不刷新墨水屏；轮播、校时、传输在保护窗口内延后或拒绝。PROFILE可选统计分阶段任务CPU与内存低水位，不依赖SD状态缓存；限时断网由独立任务恢复。常规构建关闭诊断接口。实测数据和恢复边界见[性能测试](performance-stress.md)。
+Selected-photo requests fully decode before refresh and NVS commit. Enabled-album selection advances that album's queue. A disabled-album selection uses a manual marker and returns to the original enabled queue after its interval without editing the manifest. Stable IDs preserve queues through scans/renames; failures do not advance positions.
 
-## 后台原图转换
+`photo_editor.js` composes local sources on a white target canvas. Batch review stores lightweight recipes; transmission reloads one source at a time, encodes positive-height 24-bit BMP and releases image/canvas data. Direct API source uploads retain center-crop defaults. For physical rotation F and decoder rotation R, the browser rotates by `−(F+R)` using integer-coordinate pixel copies, then the driver/physical rotations reconstruct the preview. No extra metadata is needed.
 
-photo_import 任务优先级1、栈12 KiB，单任务串行处理。JPEG按 MCU 流式解码，先选择缩小倍率，再累计到目标图像，不为原始大图分配完整 RGB。BMP按目标行读取来源行。主要工作区放入 PSRAM，量化后复用目标图像存储 BGR，顺序写入底向上 BMP。
+Recipes include final save names. Album and batch sets provide unique suggestions; `prepare()` uses that name without modifying the source File. Explicit `409 exists` refreshes names and returns unfinished recipes to review. Completed files are removed from selection. A fresh confirmation is required. Explicit busy allows at most four sends; SD errors and uncertain network responses do not trigger rename/retransmit retries.
 
-共享 SD 锁只覆盖短读写，转换在读写和抖动行之间检查报时资源窗口；显示/报时优先。正式发布和重建索引使用既有文件修订机制。自动换图可在转换期间执行，电池深睡等待转换清理完成。HTTP 仍为单请求服务：原图接收期间其他网络请求可能等待，接收结束后页面轮询后台任务进度。
+## Bilingual UI
 
-PNG通过libpng按行解压为RGBA，透明像素合成白色，按目标坐标累计到与JPEG相同的16位采样工作区。Adam7仅累计每轮真正更新的像素，避免重复贡献。读入、行处理均检查报时/SD门限，按行更新进度并让出CPU。限制来源边长/像素、元数据块和解码器分配；CRC、IEND及来源截断等错误走统一失败清理路径。
-
-## 指定照片点播
-
-指定照片通过应用任务执行，先完整解码，再提交刷新及NVS位置。启用相册更新该相册队列游标；停用相册只缓存一条显示索引，自动选片跳过停用索引，配置及可播放照片总数不变。NVS的manual标记区分停用相册点播与外部配置取消相册，兼容旧player记录。重扫/改名按稳定ID保留未变化的原启用相册队列，深睡沿用原截止时间；显示失败不提交游标。
-
-## 浏览器构图确认（0.17.4）
-
-photo_editor.js独立内置固件。浏览器按当前image_width/image_height绘制白底目标Canvas，完整显示或固定比例铺满，EXIF由浏览器解码后应用用户旋转。整批确认仅保存轻量构图参数；上传时重新加载单张来源，输出正高度24位BMP，再释放图像与Canvas。ESP32端的队列、SD临时文件、六色转换和报时/轮播资源仲裁保持原路径。原文件不上传，设备任务元数据记录收到的目标尺寸BMP；直接API上传原图仍按默认居中裁剪。
-
-## 相框摆放方向（0.17.5）
-
-构图画布依据物理姿态F确定宽高；固件解码旋转为R时，上传前对画布执行−(F+R)的90°整数倍旋转，保持最终BMP尺寸符合既有解码器要求。像素旋转为整数坐标复制，不引入再次插值。物理旋转F与驱动旋转R执行后恢复预览方向；不写额外文件或方向元数据。
-
-## 保存文件名与冲突恢复（0.17.7）
-
-构图草稿增加最终BMP名称。浏览器使用相册名称集合和本批名称集合建议唯一名称，输入校验与构图前后导航共用草稿。prepare生成的File直接采用草稿名称，原来源File不变。PUT返回明确409 exists时，保留未完成文件及构图，重新读取名称并再次打开确认；已完成文件从选择中移除。只有重新确认后才传输。明确busy最多发送4次，SD错误与不确定网络结果不进入自动命名或传输重试。
+Embedded `i18n.js` initializes locale and static text before application scripts. Dynamic messages call the same catalog. Language switching reloads the current route, preserving only browser preference, not unsaved drafts. API models and user data remain unchanged. See [language support](language-support.md).

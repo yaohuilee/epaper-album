@@ -29,12 +29,14 @@ def open_font(kind, size):
             font.set_variation_by_axes([400 if a['name'] == b'Weight' else a['default'] for a in axes])
     return font
 LABELS = [
-    ("title", "相册 · 设备配网", 30),
-    ("hotspot", "设备热点（无密码）", 19),
+    ("title", "相册 · 设备配网 / Wi-Fi setup", 24),
+    ("hotspot", "设备热点 / Open hotspot", 16),
     ("wlan", "手机 WLAN 设置中的扫一扫", 17),
     ("wechat", "微信扫一扫或手机相机", 17),
-    ("fallback", "未自动打开时，扫描右侧网页二维码。", 18),
-    ("address", "网页地址", 18),
+    ("wlan_en", "Scan in phone Wi-Fi settings", 14),
+    ("wechat_en", "Open page: camera / WeChat", 14),
+    ("fallback", "未自动打开时扫描右侧码 / Scan right QR if the page stays closed.", 14),
+    ("address", "网页地址 / Web", 16),
 ]
 lines = ["/* SPDX-License-Identifier: OFL-1.1",
          " * AlbumProvisionGlyphs: bitmap derivative of Noto Sans SC / Noto Sans Mono.",

@@ -83,10 +83,12 @@ bool epaper_provision_render(uint8_t *frame,const char *ssid)
     if(!frame || !ssid || strlen(ssid)>32) return false;
     memset(frame,0x11,EPAPER_FRAME_BYTES);
     rect(frame,0,0,800,72,5);
-    centered_bitmap(frame,&label_title,CENTER,14,1);
+    centered_bitmap(frame,&label_title,CENTER,18,1);
     centered_row(frame,&label_hotspot,ssid,111);
-    centered_bitmap(frame,&label_wlan,LEFT_QR+QR_AREA/2,140,0);
-    centered_bitmap(frame,&label_wechat,RIGHT_QR+QR_AREA/2,140,0);
+    centered_bitmap(frame,&label_wlan,LEFT_QR+QR_AREA/2,132,0);
+    centered_bitmap(frame,&label_wechat,RIGHT_QR+QR_AREA/2,132,0);
+    centered_bitmap(frame,&label_wlan_en,LEFT_QR+QR_AREA/2,154,0);
+    centered_bitmap(frame,&label_wechat_en,RIGHT_QR+QR_AREA/2,154,0);
     char payload[96];snprintf(payload,sizeof(payload),"WIFI:T:nopass;S:%s;;",ssid);
     bool valid=qr(frame,payload,LEFT_QR+QR_AREA/2,176) &&
                qr(frame,EPAPER_PROVISION_URL,RIGHT_QR+QR_AREA/2,176);

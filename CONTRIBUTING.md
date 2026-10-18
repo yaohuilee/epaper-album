@@ -1,7 +1,11 @@
-# 参与贡献
+# Contributing
 
-欢迎通过Issue报告问题，通过Pull Request提交修改。提交本项目原创代码的贡献按MIT许可证提供；第三方代码和资源须保留其原许可。
+English | [简体中文](CONTRIBUTING.zh-CN.md)
 
-说明具体问题、预期结果和实际结果，区分桌面测试与真机验证。不要上传账号密码、令牌、私人照片、原机固件或完整设备转储。
+Report problems through issues and propose changes through pull requests. Contributions to original project code are provided under MIT; preserve the licenses of third-party code and resources.
 
-开发环境和构建/测试命令见[Windows开发说明](docs/development.md)。用户操作文档见[文档目录](docs/README.md)。
+Describe the problem, expected behavior and actual result. Separate host tests from device verification. Never upload credentials, tokens, personal photos, original device firmware or complete flash dumps.
+
+Build and test instructions: [Windows development](docs/development.md). User documentation: [index](docs/README.md).
+
+User-visible changes must cover both `en` and `zh-CN`, including labels, accessibility text, errors and progress. Keep API fields, identifiers and user data independent of language. Add corresponding English and Chinese documentation links. See [language support](docs/language-support.md).

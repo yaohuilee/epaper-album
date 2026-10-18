@@ -1,56 +1,50 @@
-# 文档目录
+# Documentation
 
-[项目首页](../README.md)
+English | [简体中文](zh-CN/README.md) · [Project](../README.md)
 
-当前说明对应源码版本0.17.7。日常操作、接口参考、规划和历史记录分别维护。
+Current source: **0.18.0**. English is the default repository documentation. Every Markdown guide has a corresponding Chinese edition under `zh-CN/`; root policy documents use `.zh-CN.md`.
 
-## 日常使用
+## Everyday use
 
-建议阅读顺序：**使用指南 → 照片格式 → 配网与供电**。
+Read **User guide → Photo format → Wi-Fi setup and power**.
 
-| 文档 | 内容 |
+| Guide | Contents |
 |---|---|
-| [使用指南](user-guide.md) | 准备SD、配网、照片维护、播放设置与夜间暂停、按键和常见问题 |
-| [照片格式](image-format.md) | 上传前构图、相框横竖摆放、JPEG/PNG/BMP、六色和电脑端工具 |
-| [Wi-Fi 配网](wifi-provisioning.md) | 开放热点、二维码、成功页和热点关闭 |
-| [声音与报时](announcement.md) | ESP-TTS小乐、整点/半点、音量试听、多段暂停及报时API |
-| [ESP-TTS构建](esp-tts.md) | 设备即时中文合成、Flash音库、构建和来源 |
-| [供电与休眠](usb-power.md) | 电脑/充电器/电池运行策略及唤醒 |
-| [联网校时](wifi-time.md) | NTP、RTC时间基准、网页设置及可选凭据导入 |
-| [Web 控制台](web-layout.md) | 页面分工、设置弹窗、预览和时间显示 |
+| [User guide](user-guide.md) | SD preparation, Wi-Fi, library maintenance, playback, night pause and buttons |
+| [Photo format](image-format.md) | Composition, physical orientation, JPEG/PNG/BMP and six-color conversion |
+| [Wi-Fi setup](wifi-provisioning.md) | Open hotspot, QR codes, captive page and shutdown countdown |
+| [Announcements](announcement.md) | Xiaole speech, beeps, volume tests and quiet periods |
+| [ESP-TTS](esp-tts.md) | On-device Mandarin synthesis, voice installation and licensing |
+| [Power and sleep](usb-power.md) | Computer, charger and battery behavior |
+| [Wi-Fi and RTC](wifi-time.md) | NTP scheduling, RTC basis and optional credential import |
+| [Web console](web-layout.md) | Navigation, cards, dialogs, previews and time displays |
+| [Language support](language-support.md) | Header switching, persistence, translation rules and scope |
 
-## 接口与开发
+## Interfaces and development
 
-| 文档 | 内容 |
+| Guide | Contents |
 |---|---|
-| [配置说明](configuration.md) | 全局配置、相册清单、播放规则和持久恢复 |
-| [HTTP 状态与控制](http-status.md) | 状态字段、控制令牌、异步任务、播放/Wi-Fi/校时接口 |
-| [SD 照片 API](http-files.md) | 列表、上传、下载、删除、创建/删除相册和网络工具 |
-| [Windows 开发与安装](development.md) | ESP-IDF环境、构建、桌面测试、首次迁移与升级 |
-| [硬件摘要](hardware.md) | 芯片、引脚、实测结果与未确认的硬件指标 |
-| [运行架构](architecture.md) | 实际代码模块、调度、配置和状态保存 |
-| [性能与压力测试](performance-stress.md) | 任务CPU、堆峰值、传输/换图并发和网络故障实测 |
+| [Configuration](configuration.md) | Global settings, album manifest, playback and recovery |
+| [HTTP status and control](http-status.md) | Token, asynchronous commands, settings and status fields |
+| [Album and photo API](http-files.md) | Lists, uploads, downloads, deletion and folder maintenance |
+| [Windows development](development.md) | Native ESP-IDF, builds, tests, installation and updates |
+| [Hardware](hardware.md) | Components, pins, measurements and unverified properties |
+| [Architecture](architecture.md) | Modules, scheduling, configuration and state |
+| [Performance and stress](performance-stress.md) | CPU, memory, concurrent tasks and network failures |
 
-## 图片制作示例
+## Examples, validation and history
 
-| 文档 | 内容 |
+| Guide | Contents |
 |---|---|
-| [全球风景相册](world-album-workflow.md) | Qwen Image 2.1、100张图片和完整网络替换流程 |
-| [早期60张制作记录](comfyui-album.md) | DreamShaperXL/niji工作流与当时的SD复制方式 |
+| [100 world landscapes](world-album-workflow.md) | Qwen Image 2.1 and complete network library replacement |
+| [Early 60-photo workflow](comfyui-album.md) | DreamShaperXL/niji generation and SD copying |
+| [Validation](validation.md) | Tested behavior, measurements and remaining checks |
+| [Roadmap](roadmap.md) | Implemented features and pending work |
+| [Announcement design](design/clock-announcement.md) | Timing, pauses, synthesis and resource scheduling |
+| [Early activity design](design/announcement-and-activity.md) | Historical planning for activity detection |
+| [History](history/README.md) | M1, UI/API evolution and version records |
+| [Composition history](history/photo-import-composition.md) | 0.17.4–0.17.7 composition, orientation and naming |
 
-## 验证与规划
+Historical records describe behavior at that version, not current operating instructions. The English archive provides corresponding records of decisions and results; original detailed chronological notes remain available in the linked Chinese archive.
 
-| 文档 | 内容 |
-|---|---|
-| [验证摘要](validation.md) | 当前已验证范围、最近全流程结果和待测项目 |
-| [后续计划](roadmap.md) | 未实现功能及后续验收工作 |
-| [整点与半点报时设计](design/clock-announcement.md) | 确认设计：滴声、小乐与温湿度、多段暂停、音量试听、离线合成和调度 |
-| [早期报时与活动检测规划](design/announcement-and-activity.md) | 温湿度和声音活动的早期规划背景 |
-| [历史记录](history/README.md) | 早期M1、界面演进、HTTP演进和逐版本验收 |
-| [照片构图与上传调整](history/photo-import-composition.md) | 0.17.4–0.17.7的处理流程、方向映射、页面命名与验收边界 |
-
-历史页保留当时的配置和行为。当前操作以本目录中的使用与接口文档为准。
-
-## 开源与贡献
-
-[MIT许可证](../LICENSE) · [第三方许可](../THIRD_PARTY_NOTICES.md) · [贡献说明](../CONTRIBUTING.md) · [安全说明](../SECURITY.md)
+[MIT](../LICENSE) · [Third-party notices](../THIRD_PARTY_NOTICES.md) · [Contributing](../CONTRIBUTING.md) · [Security](../SECURITY.md)

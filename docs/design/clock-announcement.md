@@ -1,29 +1,29 @@
-# ESP-TTS报时技术设计
+# ESP-TTS announcement design
 
-[说明](../announcement.md) · [构建与资源](../esp-tts.md)
+English | [简体中文](../zh-CN/design/clock-announcement.md) · [Operation](../announcement.md) · [Build](../esp-tts.md)
 
-0.16.0采用设备本地ESP-TTS、小乐音库、固定语速2。自动播报和试听共用同一调度、合成及输出链路。旧录音包设计移入[历史资料](../history/recorded-announcement-design.md)。
+Since 0.16.0, device-local ESP-TTS Xiaole, fixed speed 2, handles automatic announcements and tests through the same scheduler/synthesizer/output chain. The old recorded-pack design is [archived](../history/recorded-announcement-design.md). UI language does not select a voice; speech is Mandarin.
 
-## 数据流与职责
+## Data and responsibilities
 
-SD根配置 → 暂停时段和00/30分计划 → 外部RTC、SHTC3新测量 → UTF-8完整短句 → ESP-TTS 16 kHz PCM → 24 kHz PCM及滴声、静默序列 → ES8311和扬声器。
+SD global settings → quiet periods and minute 00/30 targets → external RTC and fresh SHTC3 readings → complete UTF-8 phrases → ESP-TTS 16 kHz PCM → 24 kHz PCM/beeps/silences → ES8311/speaker.
 
-核心层生成短句、合并暂停区间、计算时刻和PCM位置；服务层承担RTC校验、调度、配置迁移、超时、互斥、NVS去重和HTTP；设备层负责I2S、DAC及功放。Flash音库提供音素和词典，不包含预生成报时录音。
+The core generates text, merges intervals and computes targets/sample positions. Services validate RTC, schedule/migrate/time-limit, arbitrate resources, deduplicate in NVS and expose HTTP. Devices provide I2S, DAC and amplifier. Flash voice data contains phonetic/dictionary resources, not prerecorded clock announcements.
 
-合成四类完整短句：“现在时刻”“X点整/三十分”“温度XX摄氏度”“湿度百分之XX”。温湿度之间保留300毫秒间隔。末滴后、前缀后、时间句后各静默1秒，均以24 kHz采样数计算。
+Four phrase types: “现在时刻”, “X点整/三十分”, temperature in Celsius and relative humidity percent. Temperature/humidity have a 300 ms separation. Final beep→prefix, prefix→time and time→environment each have one second of silence, measured in 24 kHz samples after the preceding sound ends.
 
-## 时序与资源
+## Timing and resources
 
-整点T−4秒开始5声倒计时，半点T−2秒开始3声，末声起点为T。目标前20秒开始合成，电池最后一次唤醒为目标前30秒；远期每15分钟、临近每分钟校准外部RTC。每次启动恢复外部RTC，不沿用内部深睡走时累计误差。
+Five hourly beeps start at T−4; three half-hourly at T−2. The final beep **starts at T**. Preparation begins T−20; battery's last planned wake is T−30. External RTC is checked periodically (15-minute distant, one-minute near-target) and restored at each boot rather than accumulating internal deep-sleep drift.
 
-短句最长15秒，单句合成限5秒，整个准备限10秒；完整PCM最多40秒，约1.83 MiB。大缓冲区放在PSRAM，I2S DMA及输出转换缓冲区用内部RAM。Flash音库2938039字节，voice_data分区位于0x600000，容量4 MiB，原NVS地址保持不变。每次播报结束释放合成器和映射。
+Each phrase can occupy at most 15 seconds, synthesize within 5 seconds, and overall preparation within 10 seconds. Full PCM is limited to 40 seconds/about 1.83 MiB. Large buffers use PSRAM; DMA/conversion buffers use internal RAM. Voice data is 2,938,039 bytes at `0x600000` in a 4 MiB partition, without moving original state NVS. Release mappings/synthesizer after output.
 
-合成期间持有共享资源锁，避免照片处理和大文件操作争抢内存。已开始的长任务可能导致该次报时跳过；不以过期音频追赶。自动报时NVS记录在输出前提交，故障后不重放同一目标；试听不写去重记录。
+Shared resource locks prevent concurrent large transfers/photo work from consuming synthesis memory. An already active long task can cause the event to be skipped; overdue speech is not replayed. Persist automatic deduplication before output. Tests do not write that target record.
 
-## 配置、迁移及验收
+## Settings and failure paths
 
-小乐和ESP-TTS固定，不提供引擎选择或录音包API。音量、00/30分开关、多段暂停继续单独保存到SD。旧录音包字段自动迁移，根配置其他对象保留，迁移失败不更改运行中的报时配置。
+ESP-TTS/Xiaole is fixed, with no engine selector or recorded-pack API. Volume, hourly/half-hourly activation and quiet periods save separately. Legacy fields migrate atomically, preserving unrelated global objects. Failed migration does not silently install a partial announcement configuration.
 
-暂停按目标T判断，时段起点包含、终点排除；06:00恢复允许05:59:56开始滴声。RTC或时间跳变异常、音库缺失、合成失败、超时均有明确状态。温湿度失败允许时间播报降级，时间句失败不发声。
+Pause rules use T, inclusive start/exclusive end. A 06:00 resumption permits 05:59:56 beeps. RTC jumps/failure, missing voice data, synthesis failure and timeout have explicit states. Environment synthesis may degrade to time-only; failed time phrases prevent output.
 
-桌面测试覆盖配置与分配失败、时段边界、重采样、文本及音频位置、合成失败清理；真机验证整点/半点试听、数据迁移、页面、功放和相册数据保留。实际00/30分触发、长期电池运行及绝对起音误差独立记录，不以试听替代。
+Host tests cover settings, allocation, boundaries, resampling, text/sample positions and cleanup. Hardware acceptance covers both test types, migration, Web and amplifier while retaining album data. Real target triggers, long battery operation and absolute onset accuracy remain separate from immediate test playback.

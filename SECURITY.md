@@ -1,13 +1,15 @@
-# 安全说明
+# Security
 
-## 运行边界
+English | [简体中文](SECURITY.zh-CN.md)
 
-设备HTTP服务用于可信局域网。控制令牌用于请求校验及跨站请求防护，不是用户登录认证。HTTP不提供TLS，配网热点按设计开放且无密码。不要把设备HTTP端口直接映射到公网。
+## Operating boundary
 
-Wi-Fi凭据保存在设备SD/NVS或本机被忽略的配置中，不属于公开仓库内容。源码、Issue、截图和日志不应包含真实密码、访问令牌或私人设备数据。
+The device HTTP server is intended for a trusted local network. Its request token provides request validation and cross-site request protection; it is not user authentication. HTTP has no TLS. The provisioning hotspot is intentionally open and password-free. Do not forward the HTTP port to the public internet.
 
-## 报告问题
+Wi-Fi credentials are stored on device SD/NVS or in ignored local build configuration. They are not public repository content. Do not include real credentials, access tokens or private device data in source, issues, screenshots or logs.
 
-有漏洞报告入口时，优先使用仓库Security中的Report a vulnerability。没有该入口时，在Issue中仅描述不含敏感数据的复现与影响，不公开凭据或完整私人日志。
+## Reporting
 
-如凭据已泄露，先撤销或轮换，再处理仓库及历史记录；仅删除当前文件不能消除Git历史中的内容。
+Use **Security → Report a vulnerability** when available. Otherwise describe reproduction steps and impact in an issue without sensitive data; do not publish credentials or complete private logs.
+
+If credentials were exposed, revoke or rotate them first, then address the repository and its history. Deleting the current file does not remove historical content.

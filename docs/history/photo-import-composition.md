@@ -1,40 +1,25 @@
-# 照片构图与上传调整记录
+# Photo composition and upload history
 
-[文档首页](../README.md) · [历史目录](README.md) · [当前使用说明](../image-format.md)
+English | [简体中文](../zh-CN/history/photo-import-composition.md) · [Current format](../image-format.md)
 
-日期：2026-10-18。对应版本0.17.4–0.17.7，包含代码、网页交互、接口说明和验收记录。
+## 0.17.4 — Review before upload (2026-10-18)
 
-## 问题与处理
+A 1279×1706 portrait without EXIF was automatically center-cropped into a landscape panel, losing upper/lower subject content. Browser review changed the default to full-photo white margins, added 90° rotation, fill/crop, zoom and dragging, and deferred all transfer until batch confirmation. The browser sends target-size 24-bit BMP; the device still performs six-color conversion. Direct source API behavior remains center crop.
 
-原流程将来源图居中裁剪到设备输入比例。一张无EXIF方向标记的1279×1706竖图被裁成800×480，人物上下内容丢失。相框也可能物理竖放，仅依据存储尺寸选择横向构图无法反映实际摆放姿态。
+The real source converted in 11.106 seconds. Downloaded output was 800×480, six palette colors with white side margins. User-selected full composition and previous cropped version coexisted. Host geometry/BMP/navigation/cancel tests and desktop/narrow layouts passed. Screen display completed; no new physical-screen visual acceptance was claimed at that point.
 
-| 版本 | 调整 | 结果 |
-|---|---|---|
-| 0.17.4 | 浏览器逐张确认完整显示/铺满、旋转、缩放和位置，整批确认后生成24位BMP | 默认保留全图，构图范围由用户确认；设备继续执行六色转换 |
-| 0.17.5 | 独立选择相框横放、向左/向右竖放和倒置 | 竖放使用480×800画布，存储像素反向旋转并抵消固件旋转 |
-| 0.17.6 | 构图前分页检查最终BMP名，区分同名与SD访问失败 | 提前显示中文冲突文件名；保留选择，0张成功时不显示批次完成数字 |
-| 0.17.7 | 构图弹窗编辑保存名，重名建议唯一新名称，晚到冲突返回草稿确认 | 无需修改电脑原文件名，可直接另存，原照片保留 |
+## 0.17.5 — Physical frame placement
 
-## 实现约定
+Added physical F separately from source rotation and firmware R. Portrait review uses 480×800; uploaded data rotates by `−(F+R)` to reconstruct upright composition after driver and physical rotation. Integer copies avoid interpolation/mirroring. No per-photo metadata or global orientation rewrite.
 
-网页只在当前浏览器中解码和构图。来源文件上限仍为8 MiB；画布合成白底，生成无EXIF的正高度24位BMP，交给原有后台导入任务。SD临时文件、六色校验、索引发布及报时/轮播仲裁沿用既有实现。
+591 checks covered all sixteen F/R combinations and asymmetric pixel reconstruction. A real clockwise portrait converted in 11.136 seconds; BMP readback, pixel restoration, margins and layouts passed. Other combinations remained host-tested rather than individually flashed/visually confirmed.
 
-相框物理旋转为F、固件解码旋转为R时，上传前执行−(F+R)的整数90°旋转。BMP的存储尺寸仍符合设备配置，不修改全局方向，也不向旧照片补写方向信息。原始BMP预览显示存储数据，可能是侧转画面；相框按所选姿态摆放后正向显示。
+## 0.17.6 — Friendly duplicate errors
 
-重名校验按最终BMP文件名忽略大小写比较，读取整个相册的分页列表。正式上传仍检查同名，处理预检查之后发生的冲突；同名文件不覆盖。SD路径无法访问使用独立错误码。已完成部分仍显示真实计数，未完成文件保留。
+Paged preflight compared output names case-insensitively, replacing the ambiguous English “exists or inaccessible” with distinct name and SD access failures. Zero successes no longer displayed a 0/1 summary. Fourteen import scenarios passed. A real duplicate returned 409 without starting a job, and original bytes were unchanged. This preflight blocking behavior was superseded by editable names in 0.17.7.
 
-## 验证与保留事项
+## 0.17.7 — Save-as inside the page
 
-Windows构建和COM7烧录通过。构图与BMP像素输出591项检查覆盖四种物理姿态与四种固件旋转的16组组合；导入页面14种场景覆盖确认/取消、目标尺寸、缓存、大小边界、PNG、分页重名和部分失败。
+Recipes retain final BMP names, suggest unused `_2/_3` suffixes and validate Unicode byte limits, reserved names and same-batch/existing conflicts. Renaming does not modify source Files. Late explicit exists errors return unfinished recipes to review; completed photos are not resent. Explicit busy retries are bounded to four sends; unknown network/SD failures stop.
 
-同一竖图的完整横向版及向右竖放版分别转换约11.1秒，BMP回读均为六色。竖放版按物理角度还原为480×800，方向和上下内容保留，已完成设备点播。原文件及旧转换版本保留，50张原轮播照片与相册选择保持。
-
-1111×1244和390×844视口下，预览、控制与底部按钮可见。重名请求返回409且未启动转换；现有文件前后SHA-256一致。页面显示中文提示，文件选择保留。
-
-实际旋转相框后的用户目视确认、真手机重复验收和其余方向组合上板仍待补齐。并行下载会占用单请求HTTP服务，可能使页面状态请求超时；本次未改变该行为。SD路径不可访问仅由模拟响应覆盖，未实际拔卡。
-
-逐版本证据及测试边界见[验证摘要](../validation.md)和[完整验收日志](validation-log.md)。个人照片、设备截图、凭据和本机测试产物留在仓库外。
-
-## 页面内改名另存（0.17.7）
-
-重名不再阻断构图入口。页面为相册及批次同名输出建议_2、_3等未占用名称，用户也可输入中文名称；.bmp后缀固定，UTF-8总长、特殊字符和重复名称实时校验。重置构图保留名称，返回上一张保留各自草稿。上传后的明确409冲突刷新名称并重新确认，部分完成及取消保留未完成选择。该变更不修改设备上传接口及禁止覆盖规则。
+621 editor checks, twenty import scenarios and folder/display regression passed. COM7 saved a Chinese-named second photo in 11.121 seconds. Complete 800×480 six-color output readback succeeded; original before/after SHA-256 matched. Photo count changed from one to two; current photo, album flags and 86400-second interval stayed unchanged. A weak-link readback initially interrupted; existing read-only retries completed after stopping browser polling. No repeated upload occurred.

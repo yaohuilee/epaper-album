@@ -1,108 +1,77 @@
-# 使用指南
+# User guide
 
-[文档首页](README.md) · [项目首页](../README.md)
+English | [简体中文](zh-CN/user-guide.md) · [Documentation](README.md)
 
-适用于已安装本项目固件的设备。原机固件首次迁移见[开发与安装](development.md)。
+## 1. Prepare the SD card
 
-## 1. 准备 SD 卡
+Copy the configuration templates from [sdcard/](../sdcard/) to the SD root. Keep `/config.json` and `/albums/albums.json` in their respective locations. Add prepared BMP photos to album folders, or upload photos after configuring Wi-Fi. The firmware does not format the card. Configuration uses UTF-8 JSON without comments or trailing commas.
 
-将仓库 [sdcard/](../sdcard/) 中的配置模板复制到SD根目录。创建 `/albums/family/`，放入预处理BMP。默认模板启用 `family`，每张停留15分钟；`travel` 默认停用。
+The default manifest enables `family` with a 900-second interval. It contains no photos. Refer to [configuration](configuration.md) for explicit album inclusion, paths and recovery behavior.
 
-SD根目录的 `config.json` 保存设备配置，`/albums/albums.json` 保存相册选择和播放规则。路径不包含固件挂载点 `/sdcard`。完整约定见[配置说明](configuration.md)。
+## 2. Connect Wi-Fi
 
-照片要求800×480横屏或480×800竖屏、24位无压缩BMP、指定六色。常规照片可在项目目录执行：
+On first setup, or after holding KEY about 2 seconds and releasing it, the display shows an open device hotspot. Use the QR scanner in your phone's **WLAN settings** to join it. The second QR code opens the web page and can be scanned with a camera or WeChat. A captive setup page may open automatically; otherwise open `http://192.168.7.60/setup`.
 
-```powershell
-python -m pip install Pillow
-python tools/prepare_photos.py originals prepared --preview-dir previews
-```
+Select a visible 2.4 GHz network or enter a hidden SSID. Enter its password and choose **Save & connect**. A successful page shows the new LAN address and a 30-second hotspot countdown. No repeated submission is needed. Return the phone to the same home Wi-Fi to open the device address.
 
-将 `prepared` 中的BMP放入相册。旋转设置、裁剪和颜色规则见[照片格式](image-format.md)。SD不支持热拔；用读卡器修改后安全弹出，再装回设备并开机。
+A device with saved credentials keeps playing if its network becomes unavailable; it does not automatically replace photos with the setup screen. See [setup](wifi-provisioning.md).
 
-## 2. 连接 Wi-Fi
+## 3. Maintain photos
 
-首次没有有效Wi-Fi配置时，设备显示配网画面。已有配置时，断网不影响本地照片轮播，也不会自动显示配网画面。长按KEY约2秒后松开可手动进入配网。
+Open **Photo library**. Albums appear as folders. Create, rename or delete albums using the toolbar. New albums are not enabled for playback automatically. To delete a nonempty album, confirm deletion of its photos; unlisted files and nested folders prevent final folder deletion.
 
-1. 用手机WLAN设置中的扫码入口扫描左侧二维码，或手动连接屏幕上的 `epaper-album-XXXXXX` 开放热点。
-2. 手机可自动弹出配网页面。未弹出时打开 `http://192.168.7.60/setup`，也可扫描右侧网页二维码。
-3. 选择2.4 GHz网络，输入密码并“保存并连接”。隐藏网络可以手动输入名称。
-4. 成功页显示设备在家庭网络中的Web地址，以及30秒热点关闭倒计时。
-5. 切回家庭Wi-Fi，打开成功页上的地址。电脑或手机与相册须在同一网络。
+Open an album to browse up to 50 photos per page. Filtering applies only to the current page. Preview arrows browse the album in the browser without changing the device display. **Display this photo** requests an actual screen update. Delete permanently removes the selected BMP; download retrieves its stored bytes.
 
-`192.168.7.60` 只用于设备配网热点。家庭网络地址由路由器分配，可能变化。详情见[配网说明](wifi-provisioning.md)。
+For uploads:
 
-## 3. 维护照片
+1. Choose or drop standard JPEG, PNG or uncompressed 24-bit BMP, up to 8 MiB per source.
+2. Review each photo. The default fits the complete photo with white margins. Choose the physical frame orientation separately from photo rotation. Fill mode supports 100–400% zoom and dragging the crop.
+3. Edit **Save file name** when needed; `.bmp` is fixed. Existing/batch duplicates get an unused suggestion such as `photo_2.bmp`. Unicode names are supported. Invalid or duplicate names disable confirmation.
+4. Confirm the batch. The browser generates each composed 24-bit BMP; the device dithers to six colors, validates and indexes it. The page shows transfer and conversion progress.
 
-在左侧“相册管理 → 照片库”打开相册文件夹。浏览、预览、上传、下载和删除都在同一工作区。
+No image is sent before batch confirmation. Original files on the computer/phone are unchanged. Existing device photos are not overwritten. Resetting composition keeps the save name. Previous/next retain per-photo drafts. A conflict discovered during saving returns unfinished photos to review with their composition retained. Completed photos are not sent again; cancel keeps unfinished selection.
 
-- 选择普通 JPEG、PNG 或24位 BMP，点击“确认构图并上传”。弹窗逐张预览，默认“完整显示（留白）”，保留整张照片。可左右旋转90°；选择“铺满裁剪”后，用100%–400%缩放与拖动照片确定显示范围。
-- “相框摆放方向”按相框实际姿态选择：横放、向右竖放、向左竖放或倒置。竖放按480×800构图；“照片方向”只旋转照片本身。未检查的下一张沿用最近选择的相框方向；已检查照片保留自己的设置。
-- 多张照片可用“上一张”“下一张”检查，最后点击“确认并上传”才开始传输。取消时不上传，保留文件选择；重新打开构图弹窗会恢复默认构图。
-- 浏览器按照设备尺寸生成24位 BMP，设备依次转换为六色、校验和索引，页面显示每张进度。构图预览是原彩色图，不是屏幕实测颜色。单张原文件上限8 MiB，同名输出不覆盖。
-- 筛选只作用于当前页文件名。
-- 预览左右箭头浏览当前相册，不改变设备正在播放的照片。
-- 照片卡片的“显示此照片”立即请求设备换图，完成后标记“当前照片”。切换中的按钮显示“正在显示…”。
-- 点播已启用相册的照片后，从它在原顺序或随机队列中的位置继续播放；点播停用相册时不启用该相册，停留该相册配置的间隔后返回原轮播队列。自动换图仍受夜间暂停限制。没有启用相册时保留点播画面。
-- 删除需要确认。删除当前照片会触发重新选择；删除最后一张后保留墨水屏画面并停止轮播。
-- 打开文件夹只选择管理目录，不会自动启用该相册播放。
+Explicit busy rejection has a bounded retry. An unconfirmed network response does not cause automatic reupload: restore the connection and check the task and file list first. See [API](http-files.md).
 
-照片库顶部“新建相册”创建文件夹，默认不参与轮播。名称支持中文，最多120字节。文件夹卡片和打开后的工具栏提供“重命名”“删除相册”。
+## 4. Configure playback
 
-重命名保留照片、播放选择和停留时间，文件夹名称同步到播放设置和左下角。删除有照片的相册时，确认框显示照片数量，勾选“同时永久删除其中的照片”后才能确认。页面逐张删除照片，再删除空目录；失败时显示已删除数量。其他文件、隐藏文件和子目录不删除，目录未清空时，相册保留。
+In **Playback settings**, each card shows saved values. Its upper-right **Settings** opens a dialog. Undo and Save are at the lower right; X closes without saving. Escape and the backdrop do not close dialogs.
 
-共享或嵌套的配置目录不支持直接重命名或删除；仅改大小写的重命名也会拒绝。接口约定见[相册API](http-files.md)。
+Save album selection, photo interval and night pause independently. Intervals range from 2 minutes to 7 days and start when a screen refresh finishes. Album selection does not change simply because you opened a folder in the library.
 
-## 4. 设置轮播
+Night pause defaults off with 22:00–06:00 preset. Start is inclusive, end exclusive. Start before end means the same day; start after end means overnight; equal times are rejected. The UI uses 15-minute steps and preserves preexisting off-grid values. Automatic changes pause, but manual changes and initial/recovery display remain possible.
 
-“播放设置”包含“参与轮播的相册”“照片停留时间”和“夜间暂停”三张摘要卡片。点击对应卡片右上角的设置按钮，在弹窗中编辑，底部右侧单独保存。
+## 5. Time, status and language
 
-相册选择保存不会修改已有间隔。停留时间保存会更新默认值及已启用相册的间隔，保留停用相册设置。有效间隔为2分钟至7天。
+**Network & time** displays Wi-Fi details, ordered NTP servers, attempts and successes, RTC state and a manual sync button. Wi-Fi settings and sync settings save separately to SD. Time sync settings do not initiate an immediate sync. A failed Wi-Fi change attempts to restore the previous network.
 
-夜间暂停开关默认关闭，起止时间预设为设备时间22:00–06:00。启用并保存后，该时段内停止自动换图，保留当前画面；手动切换仍可使用。开始早于结束为当天时段，晚于结束为跨午夜，两者不能相同。网页按15分钟选择，已有其他分钟值保留。单独保存不改变相册或当前换图截止时间。暂停结束后，已到期则换一张，未到期则继续等待。配置保存在 SD 相册清单，重启保留。
+Header time, time card, update timestamps, uptime and countdowns share the device RTC time source. Dates use `YYYY-MM-DD HH:mm:ss`. Durations omit zero units. Device time is UTC+8; an English interface does not change the time zone. Internal heap and PSRAM statistics are separate; hardware capacity is not free heap.
 
-设备从刷屏完成后开始计时。侧栏“切换下一张”或BOOT短按会推进照片，成功后重新开始完整间隔。正常深睡唤醒保留原截止时间；关机后开机恢复照片并重新开始完整间隔。
+Select **English** or **简体中文** in the header. The browser stores the choice and reloads the current workspace. Close dialogs first; active operations prevent switching. Unsaved page drafts are cleared on reload. Names, passwords, files, settings, playback and time remain unchanged. See [language support](language-support.md).
 
-关闭设置弹窗不保存。撤销恢复设备当前值；草稿在当前页面内保留，重新加载页面会清空。相册策略和顺序的完整配置见[配置说明](configuration.md)。
+## 6. Power and buttons
 
-## 5. 校时与状态
-
-“网络与时间”展示Wi-Fi及RTC/NTP状态。相应卡片右上角可打开Wi-Fi设置、校时设置或执行“立即同步时间”。Wi-Fi和校时配置分别保存到SD根配置文件。
-
-RTC保存UTC，页面显示设备时间，格式 `YYYY-MM-DD HH:mm:ss`。Header时钟、运行时长和任务倒计时按秒更新；状态接口仍按5秒轮询。当前温湿度和电源信息在“环境与供电”查看。
-
-## 6. 供电与按键
-
-电脑、普通充电器或充电宝供电时保持唤醒及联网。仅电池供电时按计划深睡，屏幕继续保留照片。
-
-| 操作 | 结果 |
+| Action | Behavior |
 |---|---|
-| BOOT短按 | 唤醒并下一张 |
-| BOOT长按约2秒 | 请求深睡；外部供电时忽略 |
-| KEY短按 | 唤醒/诊断，保留照片 |
-| KEY长按约2秒后松开 | 进入配网 |
-| PWR短按 | 硬件关机后开机 |
-| PWR长按约6秒 | 硬件关机 |
+| BOOT short | Wake and next photo |
+| BOOT held about 2 s | Request deep sleep; ignored on external power |
+| KEY short | Wake / diagnostics; retain photo |
+| KEY held about 2 s, then released | Wi-Fi setup |
+| PWR short | Power on after hardware shutdown |
+| PWR held about 6 s | Hardware shutdown |
 
-## 常见问题
+Computer USB, charger and power bank keep Wi-Fi and HTTP online. Battery operation sleeps between scheduled events. Connecting USB to a sleeping device does not necessarily wake it; press KEY. E-paper keeps its image without power. Hardware shutdown cannot be undone by the ESP deep-sleep timer. See [power](usb-power.md).
 
-| 现象 | 处理或含义 |
-|---|---|
-| 电池供电时网页离线 | 设备可能深睡；接外部电源并短按KEY |
-| 接USB后页面仍打不开 | 已深睡的设备不会因插线立即唤醒；短按KEY |
-| 新照片没轮播 | 确认相册已启用、文件通过格式检查；目录不会自动加入清单 |
-| 上传失败或响应超时 | 刷新文件列表核对结果，再处理剩余文件；不要直接假设没有写入 |
-| 换图等待较久 | 六色屏完整刷新约30秒，按钮会显示换图进度 |
-| 关机后照片仍在屏幕上 | 墨水屏断电保持画面 |
-| 需要整点语音播报 | 在“声音与报时”启用整点或半点，设置音量和独立暂停时段 |
+## Sound and announcements
 
-## 声音与报时
+Enable hourly/half-hourly announcements and volume under **Sound & announcements**. Tests use the draft volume without saving. Set up to eight independent daily quiet periods; these are separate from album night pause. The target time decides whether a period blocks speech, so a 06:00 resumption allows 05:59:56 countdown beeps.
 
-自动报时和试听使用设备本地ESP-TTS小乐，无需联网或SD录音包。进入“声音与报时”，打开报时设置，选择整点/半点并设置音量；可用当前音量试听，再保存到SD。独立暂停时段在另一个设置弹窗中保存，最多8段。
+Xiaole synthesizes Mandarin offline, even in the English interface. No prerecorded SD pack is required. See [announcements](announcement.md).
 
-整点5声、半点3声，末声不同，随后播报时间、温度和湿度。22:00–06:00暂停允许06:00的滴声从05:59:56开始。报时不刷新墨水屏；期间换图排队，照片传输及其他忙碌请求可能返回409，播报结束后再操作。详见[报时说明](announcement.md)。
+## Troubleshooting
 
-## 上传时另存为新照片（0.17.7）
-
-构图弹窗中的“保存文件名”可以直接修改，后缀固定为`.bmp`。同名照片会自动建议未占用的名称，例如`photo_2.bmp`，也可输入中文名称。名字在相册及本批次内不能重复，忽略大小写；输入不合法时禁用下一张或确认按钮。整批完成构图与命名确认后上传，原照片保留。
-
-若确认后又遇到同名，页面返回构图确认，保留相框方向、裁剪和其余未上传文件，提供新的建议名称。已成功照片不重复上传；取消时保留未完成文件选择。重置本张构图不重置保存文件名。电脑/手机上的原文件名不修改。
+- Offline page: check Wi-Fi, external power and sleep state. Press KEY if needed.
+- Upload uncertain: check the conversion task and library before retrying.
+- Missing photo: verify enabled albums and [BMP format](image-format.md).
+- Preview appears sideways: it shows raw panel BMP coordinates. Physical frame orientation is applied when composing new files.
+- File changes succeeded but indexing failed: inspect the error and rescan; do not assume the write was undone.
