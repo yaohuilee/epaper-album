@@ -59,7 +59,8 @@ esp_err_t epaper_image_receive(const char *album,const char *name,const char *pa
 {
     char output_name[256];if(!epaper_image_upload_name(name,output_name,sizeof(output_name)))return ESP_ERR_INVALID_ARG;
     if(epaper_image_active())return ESP_ERR_INVALID_STATE;
-    struct stat st;if(!stat(path,&st) || errno!=ENOENT){snprintf(error,error_size,"Output BMP already exists or is inaccessible");return ESP_ERR_INVALID_STATE;}
+    struct stat st;if(!stat(path,&st)){snprintf(error,error_size,"Output BMP already exists");return ESP_ERR_INVALID_STATE;}
+    if(errno!=ENOENT){snprintf(error,error_size,"Cannot access output BMP path on SD");return ESP_FAIL;}
     const char *slash=strrchr(path,'/');if(!slash)return ESP_ERR_INVALID_ARG;size_t prefix=(size_t)(slash-path);
     int a=snprintf(source_path,sizeof(source_path),"%.*s/.epaper-import-source.tmp",(int)prefix,path);
     int b=snprintf(temporary_path,sizeof(temporary_path),"%.*s/.epaper-import-output.tmp",(int)prefix,path);

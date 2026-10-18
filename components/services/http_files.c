@@ -259,7 +259,12 @@ static esp_err_t import_photo(httpd_req_t *req)
     epaper_album_status_t current;epaper_album_status(&current);
     for(unsigned i=0;i<config->album_count;i++)if(!strcmp(config->albums[i].id,q.album) && config->albums[i].enabled && current.photos>=EPAPER_MAX_PHOTOS){err=error_response(req,"409 Conflict","album_limit","Playback photo limit reached");goto end;}
     if(esp_vfs_fat_info(EPAPER_SD_MOUNT,&total,&free_bytes)!=ESP_OK || free_bytes<(uint64_t)req->content_len+1152054+65536){err=error_response(req,"507 Insufficient Storage","sd_full","Insufficient space for source and converted BMP");goto end;}
-    if(epaper_image_receive(q.album,q.name,target,config->rotation,source,sizeof(source),&job,error,sizeof(error))!=ESP_OK){err=error_response(req,"409 Conflict","exists",error[0]?error:"Output BMP already exists or conversion is active");goto end;}reserved=true;
+    esp_err_t reserve=epaper_image_receive(q.album,q.name,target,config->rotation,source,sizeof(source),&job,error,sizeof(error));
+    if(reserve!=ESP_OK){
+        if(reserve==ESP_ERR_INVALID_STATE)err=epaper_image_active()?busy(req):error_response(req,"409 Conflict","exists","Output BMP already exists");
+        else err=error_response(req,"500 Internal Server Error","sd_access_failed","Cannot access output BMP path on SD");
+        goto end;
+    }reserved=true;
     f=fopen(source,"wb");buffer=malloc(CHUNK_BYTES);if(!f || !buffer){err=error_response(req,"507 Insufficient Storage","sd_write_failed","Cannot stage source photo");goto end;}
     (void)setvbuf(f,NULL,_IOFBF,FILE_BUFFER_BYTES);
     epaper_http_sd_unlock();sd_held=false;

@@ -97,13 +97,14 @@ extern const char album_page[] asm("_binary_albums_html_start");
 extern const char ui_css[] asm("_binary_ui_css_start");
 extern const char ui_js[] asm("_binary_ui_js_start");
 extern const char announcement_js[] asm("_binary_announcements_js_start");
+extern const char photo_editor_js[] asm("_binary_photo_editor_js_start");
 static esp_err_t ui_asset(httpd_req_t *req)
 {
     bool css=!strncmp(req->uri,"/ui.css",7);
     httpd_resp_set_type(req,css?"text/css; charset=utf-8":"text/javascript; charset=utf-8");
     httpd_resp_set_hdr(req,"Cache-Control","no-store");
     httpd_resp_set_hdr(req,"X-Content-Type-Options","nosniff");
-    return httpd_resp_send(req,css?ui_css:!strcmp(req->uri,"/announcements.js")?announcement_js:ui_js,HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(req,css?ui_css:!strcmp(req->uri,"/announcements.js")?announcement_js:!strcmp(req->uri,"/photo_editor.js")?photo_editor_js:ui_js,HTTPD_RESP_USE_STRLEN);
 }
 static esp_err_t captive_redirect(httpd_req_t *req,httpd_err_code_t code)
 {
@@ -383,6 +384,8 @@ esp_err_t epaper_http_start(void)
     const httpd_uri_t album_ui={.uri="/albums",.method=HTTP_GET,.handler=albums_page};
     const httpd_uri_t css={.uri="/ui.css",.method=HTTP_GET,.handler=ui_asset};
     const httpd_uri_t js={.uri="/ui.js",.method=HTTP_GET,.handler=ui_asset};
+    const httpd_uri_t editor_js={.uri="/photo_editor.js",.method=HTTP_GET,.handler=ui_asset};
+    esp_err_t editor_result=httpd_register_uri_handler(server,&editor_js);if(editor_result!=ESP_OK)return editor_result;
     const httpd_uri_t status={.uri="/api/status",.method=HTTP_GET,.handler=status_json};
     const httpd_uri_t show_photo={.uri="/api/show-photo",.method=HTTP_POST,.handler=command};
     esp_err_t show_photo_result=httpd_register_uri_handler(server,&show_photo);if(show_photo_result!=ESP_OK)return show_photo_result;
@@ -519,6 +522,10 @@ void epaper_http_update(bool usb_host)
     cJSON_AddNumberToObject(a,"interval_seconds",album.interval);cJSON_AddNumberToObject(a,"next_seconds",album.next_us/1000000);
     const epaper_album_config_t *config=epaper_album_configuration();
     cJSON *night=cJSON_AddObjectToObject(a,"night_pause");
+    bool portrait=config && (config->rotation==90 || config->rotation==270);
+    cJSON_AddNumberToObject(a,"image_width",portrait?480:800);
+    cJSON_AddNumberToObject(a,"image_height",portrait?800:480);
+    cJSON_AddNumberToObject(a,"image_rotation_degrees",config?config->rotation:0);
     char night_start[6],night_end[6];
     unsigned start=config?config->night_start:1320,end=config?config->night_end:360;
     snprintf(night_start,sizeof(night_start),"%02u:%02u",(start/60)%24,start%60);

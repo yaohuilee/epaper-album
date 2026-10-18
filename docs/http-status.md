@@ -94,7 +94,7 @@ SSID为1–32字节，区分大小写，设备使用2.4 GHz网络。密码省略
 | `rtc` | 芯片、有效性、UTC基准和日历 |
 | `environment` | SHTC3温湿度及读取状态 |
 | `power` | AXP2101、VBUS、电池存在/电压和充电阶段 |
-| `album` | 相册/照片数量、当前照片、间隔和下次换图 |
+| `album` | 相册/照片数量、当前照片、间隔和下次换图；`image_width/image_height`为当前导入目标尺寸（0.17.4），`image_rotation_degrees`为固件解码旋转（0.17.5） |
 | `control` | 令牌、命令结果、忙状态和文件索引修订 |
 
 `network.last_sync_epoch/last_attempt_epoch` 为UTC秒，0表示无可信记录。最近成功时间及服务器持久化；最近尝试与错误属于本次启动。
