@@ -1,6 +1,10 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const editor=require('../components/services/photo_editor.js');
 let checks=0;const near=(a,b)=>{assert(Math.abs(a-b)<1e-8);checks++};
+for(const name of ['照片 01.bmp','photo.BMP','😀.bmp']){assert(editor.validName(name));checks++;}
+for(const name of ['', '.bmp','../a.bmp','a/b.bmp','a\\b.bmp','a..b.bmp',' con.bmp','CON.bmp','CON.photo.bmp','a?.bmp','x.jpg','x\0.bmp','长'.repeat(84)+'.bmp']){assert(!editor.validName(name),name);checks++;}
+const names=new Set(['photo.bmp','photo_2.bmp']);assert.equal(editor.suggestName('photo.jpg',names),'photo_3.bmp');assert.equal(editor.suggestName('CON.photo.bmp',new Set()),'photo_CON.photo_2.bmp');
+const long='长'.repeat(83)+'.bmp',suggested=editor.suggestName(long,new Set([long]));assert(editor.validName(suggested));assert(new TextEncoder().encode(suggested).length<=255);checks+=4;
 // Entire portrait remains inside the frame, with centered white bars.
 let p=editor.layout(1279,1706,800,480,editor.initial());
 near(p.dh,480);near(p.top,0);near(p.left,(800-1279*480/1706)/2);
@@ -42,19 +46,21 @@ assert.deepEqual(editor.inspect(png.buffer),{width:1279,height:1706});pv.setUint
 async function ui(cancel=false,broken=false){
  const nodes=new Map();let released=0;
  const ctx2d={fillRect(){},clearRect(){},save(){},restore(){},translate(){},rotate(){},scale(){},drawImage(){}};
- function node(id){if(!nodes.has(id))nodes.set(id,{value:'',disabled:false,open:false,width:800,height:480,textContent:'',getContext:()=>ctx2d,getBoundingClientRect:()=>({width:800,height:480}),setPointerCapture(){},addEventListener(){},showModal(){this.open=true},close(){this.open=false}});return nodes.get(id);}
+ function node(id){if(!nodes.has(id))nodes.set(id,{value:'',classList:{toggle(){}},setAttribute(){},disabled:false,open:false,width:800,height:480,textContent:'',getContext:()=>ctx2d,getBoundingClientRect:()=>({width:800,height:480}),setPointerCapture(){},addEventListener(){},showModal(){this.open=true},close(){this.open=false}});return nodes.get(id);}
  class Image{constructor(){this.naturalWidth=1279;this.naturalHeight=1706}async decode(){if(broken)throw Error('bad input')}}
- const ctx={window:{},document:{getElementById:node},URL:{createObjectURL:()=> 'blob:test',revokeObjectURL:()=>released++},Image,console};vm.createContext(ctx);vm.runInContext(fs.readFileSync('components/services/photo_editor.js','utf8'),ctx);
- const fixture=editor.bmp(new Uint8Array(2*3*4),2,3),files=[{name:'portrait.bmp',arrayBuffer:async()=>fixture},{name:'next.bmp',arrayBuffer:async()=>fixture}],pending=ctx.window.photoEditor.review(files,800,480);
+ const ctx={TextEncoder,window:{},document:{getElementById:node},URL:{createObjectURL:()=> 'blob:test',revokeObjectURL:()=>released++},Image,console};vm.createContext(ctx);vm.runInContext(fs.readFileSync('components/services/photo_editor.js','utf8'),ctx);
+ const fixture=editor.bmp(new Uint8Array(2*3*4),2,3),files=[{name:'portrait.bmp',arrayBuffer:async()=>fixture},{name:'next.bmp',arrayBuffer:async()=>fixture}],pending=ctx.window.photoEditor.review(files,800,480,0,{existingNames:['PORTRAIT.BMP','NEXT.BMP']});
  for(let i=0;i<10;i++)await Promise.resolve();assert(node('compose-dialog').open);
  if(broken){assert(node('compose-confirm').disabled);assert(node('compose-info').textContent.includes('无法解码'));node('close-compose').onclick();assert.equal(await pending,null);return;}
  assert.equal(node('compose-mode').value,'contain');assert(node('compose-zoom').disabled);
+ assert.equal(node('compose-save-name').value,'portrait_2');node('compose-save-name').value='';node('compose-save-name').oninput();assert(node('compose-confirm').disabled);node('compose-save-name').value='next_2';node('compose-save-name').oninput();assert(node('compose-confirm').disabled);node('compose-save-name').value='portrait';node('compose-save-name').oninput();assert(node('compose-confirm').disabled);node('compose-save-name').value='自定义照片';node('compose-save-name').oninput();assert(!node('compose-confirm').disabled);checks+=5;
  node('compose-frame').value='90';node('compose-frame').onchange();assert.equal(node('compose-canvas').width,480);assert.equal(node('compose-canvas').height,800);assert(node('compose-info').textContent.includes('构图 480 × 800'));checks+=3;
  node('compose-right').onclick();node('compose-reset').onclick();assert.equal(node('compose-frame').value,'90');assert.equal(node('compose-canvas').width,480);node('compose-mode').value='cover';node('compose-mode').onchange();node('compose-zoom').value=200;node('compose-zoom').oninput();
  node('compose-canvas').onpointerdown({pointerId:1,clientX:100,clientY:100});node('compose-canvas').onpointermove({pointerId:1,clientX:150,clientY:150});node('compose-canvas').onpointerup();
  node('compose-confirm').onclick();for(let i=0;i<10;i++)await Promise.resolve();assert.equal(node('compose-position').textContent,'2 / 2');assert.equal(node('compose-frame').value,'90');
  node('compose-right').onclick();node('compose-back').onclick();for(let i=0;i<10;i++)await Promise.resolve();assert.equal(node('compose-mode').value,'cover');assert.equal(node('compose-zoom').value,200);
- if(cancel){node('compose-cancel').onclick();assert.equal(await pending,null);}else{node('compose-confirm').onclick();for(let i=0;i<10;i++)await Promise.resolve();node('compose-confirm').onclick();const recipes=await pending;assert.equal(recipes[0].frame,90);assert.equal(recipes[1].frame,90);assert.equal(recipes[0].mode,'cover');assert.equal(recipes[0].zoom,2);assert(recipes[0].y<.5);assert.equal(recipes[1].turn,1);}
+ assert.equal(node('compose-save-name').value,'自定义照片');
+ if(cancel){node('compose-cancel').onclick();assert.equal(await pending,null);}else{node('compose-confirm').onclick();for(let i=0;i<10;i++)await Promise.resolve();node('compose-confirm').onclick();const recipes=await pending;assert.equal(recipes[0].name,'自定义照片.bmp');assert.equal(recipes[1].name,'next_2.bmp');assert.equal(recipes[0].frame,90);assert.equal(recipes[1].frame,90);assert.equal(recipes[0].mode,'cover');assert.equal(recipes[0].zoom,2);assert(recipes[0].y<.5);assert.equal(recipes[1].turn,1);}
  assert(!node('compose-dialog').open);assert.equal(released,cancel?3:4);checks+=12;
 }
 async function prepared(){
@@ -62,12 +68,12 @@ async function prepared(){
  const context={fillRect(){},save(){},restore(){},translate(){},rotate(){},scale(){},drawImage(){},getImageData(x,y,w,h){rendered=new Uint8Array(w*h*4);for(let i=0;i<rendered.length;i++)rendered[i]=(i*19+11)%256;return {data:rendered};}};
  class Image{constructor(){this.naturalWidth=2;this.naturalHeight=3}async decode(){}}
  class File{constructor(parts,name){this.buffer=parts[0];this.name=name}}
- const ctx={window:{},document:{createElement:()=>({getContext:()=>context})},URL:{createObjectURL:()=> 'blob:test',revokeObjectURL(){}},Image,File};
+ const ctx={TextEncoder,window:{},document:{createElement:()=>({getContext:()=>context})},URL:{createObjectURL:()=> 'blob:test',revokeObjectURL(){}},Image,File};
  vm.createContext(ctx);vm.runInContext(fs.readFileSync('components/services/photo_editor.js','utf8'),ctx);
  const fixture=editor.bmp(new Uint8Array(24),2,3),file={name:'sample.bmp',arrayBuffer:async()=>fixture};
  for(const rotation of [0,90,180,270])for(const frame of [0,90,180,270]){
-  const w=rotation%180?4:6,h=rotation%180?6:4,result=await ctx.window.photoEditor.prepare(file,{frame},w,h,rotation),v=new DataView(result.buffer),bytes=new Uint8Array(result.buffer),rgba=new Uint8Array(w*h*4),stride=(w*3+3)&~3;
-  assert.equal(v.getInt32(18,true),w);assert.equal(v.getInt32(22,true),h);assert.equal(result.name,'sample.bmp');
+  const w=rotation%180?4:6,h=rotation%180?6:4,name=frame===0?'另存照片.bmp':'sample.bmp',result=await ctx.window.photoEditor.prepare(file,{frame,name},w,h,rotation),v=new DataView(result.buffer),bytes=new Uint8Array(result.buffer),rgba=new Uint8Array(w*h*4),stride=(w*3+3)&~3;
+  assert.equal(v.getInt32(18,true),w);assert.equal(v.getInt32(22,true),h);assert.equal(result.name,name);
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){const at=54+(h-1-y)*stride+x*3,d=(y*w+x)*4;rgba.set([bytes[at+2],bytes[at+1],bytes[at],255],d);}
   const panel=editor.rotate(rgba,w,h,rotation/90),physical=editor.rotate(panel.pixels,panel.width,panel.height,frame/90);
   for(let i=0;i<rendered.length;i+=4)assert.deepEqual(Array.from(physical.pixels.slice(i,i+3)),Array.from(rendered.slice(i,i+3)));checks+=4;

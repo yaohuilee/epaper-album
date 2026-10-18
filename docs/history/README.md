@@ -6,8 +6,8 @@
 
 | 文档 | 范围 |
 |---|---|
-| [逐版本验收日志](validation-log.md) | 0.2.0至0.17.6，桌面测试、真机观察和未测项 |
-| [照片构图与上传调整](photo-import-composition.md) | 0.17.4–0.17.6，人工构图、相框横竖摆放和同名提示 |
+| [逐版本验收日志](validation-log.md) | 0.2.0至0.17.7，桌面测试、真机观察和未测项 |
+| [照片构图与上传调整](photo-import-composition.md) | 0.17.4–0.17.7，人工构图、相框横竖摆放、同名提示与页面另存 |
 | [界面调整记录](web-layout-changes.md) | 布局、卡片、弹窗、时间格式、预览和Wi-Fi交互的演进 |
 | [HTTP调整记录](http-status-changes.md) | 状态字段、控制和设置接口的早期说明 |
 | [M0–M4阶段计划](roadmap-stages.md) | 早期开发目标和当时验收清单 |

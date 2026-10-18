@@ -3,6 +3,20 @@
 'use strict';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const initial=()=>({turn:0,frame:null,mode:'contain',zoom:1,x:.5,y:.5});
+const outputName=name=>name.replace(/\.(jpe?g|png|bmp)$/i,'.bmp');
+function validName(name){return typeof name==='string'&&/\.bmp$/i.test(name)&&name.length>4&&new TextEncoder().encode(name).length<=255&&!/^[. ]|[. ]$|\.\.|[<>:"\/\\|?*\x00-\x1f\x7f]/.test(name)&&!/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name);}
+function suggestName(name,taken){
+ const original=outputName(name);if(validName(original)&&!taken.has(original.toLowerCase()))return original;
+ let base=original.slice(0,-4).replace(/[<>:"\/\\|?*\x00-\x1f\x7f]/g,'_').replace(/\.\./g,'_').replace(/^[. ]+|[. ]+$/g,'')||'photo';
+ if(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(base))base='photo_'+base;
+ for(let n=2;;n++){const suffix='_'+n+'.bmp';let stem=base;while(new TextEncoder().encode(stem+suffix).length>255)stem=Array.from(stem).slice(0,-1).join('');const candidate=stem+suffix;if(validName(candidate)&&!taken.has(candidate.toLowerCase()))return candidate;}
+}
+function nameError(name,existing,recipes,index){
+ if(!validName(name))return '文件名不能为空，最多255字节；不包含路径、特殊字符、连续句点或保留名称。';
+ if(existing.has(name.toLowerCase()))return '相册中已有同名照片，请修改保存文件名。';
+ if(recipes.some((r,i)=>i!==index&&r.name?.toLowerCase()===name.toLowerCase()))return '本批照片中有同名文件，请使用不同的保存文件名。';
+ return '';
+}
 function surface(w,h,recipe,rotation=0){
  const frame=Number.isFinite(recipe.frame)?recipe.frame:(360-rotation)%360,portrait=frame%180!==0;
  return {frame,width:portrait?Math.min(w,h):Math.max(w,h),height:portrait?Math.max(w,h):Math.min(w,h),turn:((720-frame-rotation)/90)%4};
@@ -57,34 +71,38 @@ async function decode(file){
  finally{URL.revokeObjectURL(url);}
 }
 async function prepare(file,recipe,w,h,rotation=w<h?90:0){
+ const name=recipe.name||outputName(file.name);if(!validName(name))throw Error('保存文件名不合法。');
  const image=await decode(file),canvas=document.createElement('canvas'),view=surface(w,h,recipe,rotation);canvas.width=view.width;canvas.height=view.height;
- try{paint(canvas,image,recipe);const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data,p=rotate(data,canvas.width,canvas.height,view.turn);if(p.width!==w||p.height!==h)throw Error('相框方向与设备输出尺寸不匹配。');return new File([bmp(p.pixels,w,h)],file.name.replace(/\.(jpe?g|png|bmp)$/i,'.bmp'),{type:'image/bmp'});}
+ try{paint(canvas,image,recipe);const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data,p=rotate(data,canvas.width,canvas.height,view.turn);if(p.width!==w||p.height!==h)throw Error('相框方向与设备输出尺寸不匹配。');return new File([bmp(p.pixels,w,h)],name,{type:'image/bmp'});}
  finally{image.src='';canvas.width=canvas.height=1;}
 }
-async function review(files,w,h,rotation=w<h?90:0){
- const $=id=>document.getElementById(id),dialog=$('compose-dialog'),canvas=$('compose-canvas'),recipes=files.map(initial);
+async function review(files,w,h,rotation=w<h?90:0,options={}){
+ const $=id=>document.getElementById(id),dialog=$('compose-dialog'),canvas=$('compose-canvas'),existing=new Set((options.existingNames||[]).map(n=>n.toLowerCase())),taken=new Set(existing);
+ const recipes=files.map((file,i)=>{const r={...initial(),...options.drafts?.[i]};r.name=suggestName(r.name||file.name,taken);taken.add(r.name.toLowerCase());return r;});
  let at=0,image=null,serial=0,loading=false,done=false,drag=null,settle,defaultFrame=(360-rotation)%360;
  canvas.width=w;canvas.height=h;
- function buttons(){const r=recipes[at];$('compose-back').disabled=loading||at===0;$('compose-confirm').disabled=loading||!image;$('compose-confirm').textContent=at===files.length-1?'确认并上传':'下一张';for(const id of ['compose-frame','compose-left','compose-right','compose-mode','compose-reset'])$(id).disabled=loading||!image;$('compose-zoom').disabled=loading||!image||r.mode!=='cover';}
+ function buttons(){const r=recipes[at];$('compose-back').disabled=loading||at===0;$('compose-confirm').disabled=loading||!image||!!nameError(r.name,existing,recipes,at);$('compose-confirm').textContent=at===files.length-1?'确认并上传':'下一张';for(const id of ['compose-save-name','compose-frame','compose-left','compose-right','compose-mode','compose-reset'])$(id).disabled=loading||!image;$('compose-zoom').disabled=loading||!image||r.mode!=='cover';}
+ function showName(){const error=nameError(recipes[at].name,existing,recipes,at);$('compose-save-name').setAttribute('aria-invalid',String(!!error));$('compose-name-note').textContent=error||options.notice||(recipes[at].name!==outputName(files[at].name)?'将另存为新照片，原照片保留。':'文件名可用。');$('compose-name-note').classList.toggle('name-error',!!error);buttons();}
  function draw(){if(!image)return;const view=surface(w,h,recipes[at],rotation);canvas.width=view.width;canvas.height=view.height;paint(canvas,image,recipes[at]);$('compose-frame').value=String(view.frame);$('compose-mode').value=recipes[at].mode;$('compose-zoom').value=Math.round(recipes[at].zoom*100);$('compose-scale').textContent=Math.round(recipes[at].zoom*100)+'%';$('compose-info').textContent='原图 '+image.naturalWidth+' × '+image.naturalHeight+' · 构图 '+view.width+' × '+view.height+' · 存储 '+w+' × '+h;buttons();}
  async function load(){const mine=++serial;loading=true;if(image)image.src='';image=null;canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);$('compose-name').textContent=files[at].name;$('compose-position').textContent=(at+1)+' / '+files.length;$('compose-info').textContent='正在读取本地照片…';buttons();
-  try{const loaded=await decode(files[at]);if(mine!==serial||done){loaded.src='';return}image=loaded;loading=false;if(recipes[at].frame==null)recipes[at].frame=defaultFrame;draw();}
+  try{const loaded=await decode(files[at]);if(mine!==serial||done){loaded.src='';return}image=loaded;loading=false;if(recipes[at].frame==null)recipes[at].frame=defaultFrame;$('compose-save-name').value=recipes[at].name.slice(0,-4);showName();draw();}
   catch(e){if(mine!==serial||done)return;loading=false;$('compose-info').textContent=e.message;buttons();}
  }
  function close(value){if(done)return;done=true;serial++;if(image)image.src='';image=null;canvas.width=canvas.height=1;dialog.close();settle(value);}
  const promise=new Promise(resolve=>settle=resolve);
  $('close-compose').onclick=$('compose-cancel').onclick=()=>close(null);
  $('compose-back').onclick=()=>{if(!loading&&at>0){at--;load();}};
- $('compose-confirm').onclick=()=>{if(loading||!image)return;if(at===files.length-1)close(recipes.map(r=>({...r})));else{at++;load();}};
+ $('compose-confirm').onclick=()=>{if(loading||!image||nameError(recipes[at].name,existing,recipes,at))return;if(at===files.length-1){const invalid=recipes.findIndex((r,i)=>nameError(r.name,existing,recipes,i));if(invalid>=0){at=invalid;load();return}close(recipes.map(r=>({...r})));}else{at++;load();}};
+ $('compose-save-name').oninput=()=>{recipes[at].name=$('compose-save-name').value+'.bmp';options.notice='';showName();};
  for(const [id,delta] of [['compose-left',3],['compose-right',1]])$(id).onclick=()=>{recipes[at].turn=(recipes[at].turn+delta)%4;recipes[at].zoom=1;recipes[at].x=recipes[at].y=.5;draw();};
  $('compose-frame').onchange=()=>{defaultFrame=Number($('compose-frame').value);recipes[at].frame=defaultFrame;recipes[at].zoom=1;recipes[at].x=recipes[at].y=.5;draw();};
  $('compose-mode').onchange=()=>{recipes[at].mode=$('compose-mode').value;recipes[at].zoom=1;recipes[at].x=recipes[at].y=.5;draw();};
  $('compose-zoom').oninput=()=>{recipes[at].zoom=Number($('compose-zoom').value)/100;draw();};
- $('compose-reset').onclick=()=>{recipes[at]={...initial(),frame:recipes[at].frame};draw();};
+ $('compose-reset').onclick=()=>{recipes[at]={...initial(),frame:recipes[at].frame,name:recipes[at].name};draw();};
  canvas.onpointerdown=e=>{if(loading||!image||recipes[at].mode!=='cover')return;const p=layout(image.naturalWidth,image.naturalHeight,canvas.width,canvas.height,recipes[at]);drag={id:e.pointerId,px:e.clientX,py:e.clientY,x:recipes[at].x,y:recipes[at].y,p};canvas.setPointerCapture(e.pointerId);};
  canvas.onpointermove=e=>{if(!drag||drag.id!==e.pointerId)return;const rect=canvas.getBoundingClientRect(),r=recipes[at],cw=canvas.width,ch=canvas.height;if(drag.p.dw>cw)r.x=clamp(drag.x-(e.clientX-drag.px)*cw/rect.width/(drag.p.dw-cw),0,1);if(drag.p.dh>ch)r.y=clamp(drag.y-(e.clientY-drag.py)*ch/rect.height/(drag.p.dh-ch),0,1);draw();};
  canvas.onpointerup=canvas.onpointercancel=canvas.onlostpointercapture=()=>{drag=null;};
  dialog.oncancel=e=>e.preventDefault();dialog.showModal();await load();return promise;
 }
-const api={initial,surface,rotate,layout,paint,bmp,inspect,prepare,review};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.photoEditor=api;
+const api={initial,outputName,validName,suggestName,nameError,surface,rotate,layout,paint,bmp,inspect,prepare,review};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.photoEditor=api;
 })(typeof window!=='undefined'?window:globalThis);
